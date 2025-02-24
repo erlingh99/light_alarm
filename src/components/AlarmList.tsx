@@ -16,8 +16,10 @@ const formatRecurrence = (alarm: Alarm) => {
   const { type, days } = alarm.recurrence;
   if (type === "daily") return "Every day";
   if (type === "weekly" && days) {
-    const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    return `Every ${days.map((d) => weekDays[d]).join(", ")}`;
+    const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const weekDayIndices = [1, 2, 3, 4, 5, 6, 0];
+    const displayIndices = days.map(d => weekDayIndices.indexOf(d));
+    return `Every ${displayIndices.map(i => weekDays[i]).join(", ")}`;
   }
   return "Custom";
 };
