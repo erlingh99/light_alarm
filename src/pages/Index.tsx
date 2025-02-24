@@ -5,15 +5,17 @@ import { AlarmForm } from "@/components/AlarmForm";
 import { AlarmList } from "@/components/AlarmList";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, Moon, Sun } from "lucide-react";
 import { alarmService } from "@/services/alarmService";
 import { Alarm } from "@/types/alarm";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes";
 
 const Index = () => {
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
 
   const { data: alarms = [] } = useQuery({
@@ -94,28 +96,41 @@ const Index = () => {
           <p className="text-muted-foreground mt-2">Schedule and manage your alarms</p>
         </div>
         
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              onClick={() => setEditingAlarm(null)}
-              className="bg-sage hover:bg-sage-light transition-colors"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Alarm
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingAlarm ? "Edit Alarm" : "Create New Alarm"}
-              </DialogTitle>
-            </DialogHeader>
-            <AlarmForm
-              onSubmit={handleSubmit}
-              initialData={editingAlarm || undefined}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="rounded-full"
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            <span className="sr-only">Toggle theme</span>
+          </Button>
+          
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                onClick={() => setEditingAlarm(null)}
+                className="bg-sage hover:bg-sage-light transition-colors"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                New Alarm
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingAlarm ? "Edit Alarm" : "Create New Alarm"}
+                </DialogTitle>
+              </DialogHeader>
+              <AlarmForm
+                onSubmit={handleSubmit}
+                initialData={editingAlarm || undefined}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <AlarmList
