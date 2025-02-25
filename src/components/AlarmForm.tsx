@@ -23,7 +23,7 @@ interface AlarmFormProps {
 
 export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) => {
   const [name, setName] = useState(initialData?.name || "");
-  const [time, setTime] = useState(initialData?.time || "12:00");
+  const [time, setTime] = useState(initialData?.time || "00:00");
   const [recurrence, setRecurrence] = useState<RecurrencePattern>(
     initialData?.recurrence || { type: "daily" }
   );
