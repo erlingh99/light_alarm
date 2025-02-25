@@ -23,7 +23,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         id="time"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 rounded-lg border border-input bg-transparent"
+        className="w-full p-2 rounded-lg border border-input bg-transparent [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
       />
     </div>
   );

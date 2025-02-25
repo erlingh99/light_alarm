@@ -38,6 +38,16 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
       });
       return;
     }
+
+    if (recurrence.type === "custom" && (!recurrence.customDates || recurrence.customDates.length === 0)) {
+      toast({
+        title: "Error",
+        description: "Please select at least one date for custom alarm",
+        variant: "destructive",
+      });
+      return;
+    }
+
     onSubmit({ name, time, recurrence });
   };
 
