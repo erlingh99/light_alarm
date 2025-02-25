@@ -23,15 +23,10 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
   // Convert dates array to Date objects for the calendar
   const selectedDates = value.customDates?.map(date => new Date(date)) || [];
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!date) return;
-
-    const dateString = date.toISOString();
-    const currentDates = value.customDates || [];
-    const newDates = currentDates.includes(dateString)
-      ? currentDates.filter(d => d !== dateString)
-      : [...currentDates, dateString];
-
+  const handleDateSelect = (dates: Date[] | undefined) => {
+    if (!dates) return;
+    
+    const newDates = dates.map(date => date.toISOString());
     onChange({
       ...value,
       customDates: newDates,
@@ -97,7 +92,7 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
           <Calendar
             mode="multiple"
             selected={selectedDates}
-            onSelect={(date) => handleDateSelect(date as Date)}
+            onSelect={handleDateSelect}
             disabled={{ before: addDays(new Date(), -1) }}
             className="rounded-md border"
           />

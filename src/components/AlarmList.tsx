@@ -4,6 +4,7 @@ import { Alarm } from "@/types/alarm";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface AlarmListProps {
   alarms: Alarm[];
@@ -13,13 +14,18 @@ interface AlarmListProps {
 }
 
 const formatRecurrence = (alarm: Alarm) => {
-  const { type, days } = alarm.recurrence;
+  const { type, days, customDates } = alarm.recurrence;
   if (type === "daily") return "Every day";
   if (type === "weekly" && days) {
     const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     const weekDayIndices = [1, 2, 3, 4, 5, 6, 0];
     const displayIndices = days.map(d => weekDayIndices.indexOf(d));
     return `Every ${displayIndices.map(i => weekDays[i]).join(", ")}`;
+  }
+  if (type === "custom" && customDates) {
+    return customDates
+      .map(date => format(new Date(date), "MMM d"))
+      .join(", ");
   }
   return "Custom";
 };
