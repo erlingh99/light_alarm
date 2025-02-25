@@ -39,6 +39,15 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
       return;
     }
 
+    if (recurrence.type === "weekly" && (!recurrence.days || recurrence.days.length === 0)) {
+      toast({
+        title: "Error",
+        description: "Please select at least one day for weekly alarm",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (recurrence.type === "custom" && (!recurrence.customDates || recurrence.customDates.length === 0)) {
       toast({
         title: "Error",
@@ -49,6 +58,12 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
     }
 
     onSubmit({ name, time, recurrence });
+
+    toast({
+      title: "Success",
+      description: "Alarm created successfully",
+      className: "bg-green-500 text-white border-none",
+    });
   };
 
   return (
