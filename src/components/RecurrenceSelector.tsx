@@ -3,7 +3,9 @@ import React from "react";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
 import { RecurrencePattern } from "@/types/alarm";
+import { addDays } from "date-fns";
 
 interface RecurrenceSelectorProps {
   value: RecurrencePattern;
@@ -17,6 +19,24 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
   // Reorder weekdays to start with Monday
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const weekDayIndices = [1, 2, 3, 4, 5, 6, 0]; // Map display order to actual day indices
+
+  // Convert dates array to Date objects for the calendar
+  const selectedDates = value.customDates?.map(date => new Date(date)) || [];
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+
+    const dateString = date.toISOString();
+    const currentDates = value.customDates || [];
+    const newDates = currentDates.includes(dateString)
+      ? currentDates.filter(d => d !== dateString)
+      : [...currentDates, dateString];
+
+    onChange({
+      ...value,
+      customDates: newDates,
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -68,6 +88,19 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {value.type === "custom" && (
+        <div className="mt-4">
+          <Label className="mb-2 block">Select dates</Label>
+          <Calendar
+            mode="multiple"
+            selected={selectedDates}
+            onSelect={(date) => handleDateSelect(date as Date)}
+            disabled={{ before: addDays(new Date(), -1) }}
+            className="rounded-md border"
+          />
         </div>
       )}
     </div>
