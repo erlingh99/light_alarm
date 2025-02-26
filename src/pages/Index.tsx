@@ -32,7 +32,7 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm created successfully",
-        className: "bg-green-500 text-white border-none",
+        className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
@@ -54,7 +54,7 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm updated successfully",
-        className: "bg-green-500 text-white border-none",
+        className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
@@ -73,7 +73,7 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm deleted successfully",
-        className: "bg-green-500 text-white border-none",
+        className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {

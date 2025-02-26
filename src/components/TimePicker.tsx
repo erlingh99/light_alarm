@@ -15,6 +15,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   onChange,
   className,
 }) => {
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = e.target.value;
+    // Ensure the time is in 24-hour format
+    if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(newTime)) {
+      onChange(newTime);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <Label htmlFor="time">Time (24h)</Label>
@@ -22,8 +30,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         type="time"
         id="time"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full p-2 rounded-lg border border-input bg-transparent [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-datetime-edit-ampm-field]:hidden"
+        onChange={handleTimeChange}
+        className="w-full p-2 rounded-lg border border-input bg-transparent"
+        required
       />
     </div>
   );
