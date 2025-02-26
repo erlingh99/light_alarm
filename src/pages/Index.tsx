@@ -32,6 +32,14 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm created successfully",
+        className: "bg-green-500 text-white border-none",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to create alarm",
+        variant: "destructive",
       });
     },
   });
@@ -46,6 +54,14 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm updated successfully",
+        className: "bg-green-500 text-white border-none",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update alarm",
+        variant: "destructive",
       });
     },
   });
@@ -57,6 +73,14 @@ const Index = () => {
       toast({
         title: "Success",
         description: "Alarm deleted successfully",
+        className: "bg-green-500 text-white border-none",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete alarm",
+        variant: "destructive",
       });
     },
   });

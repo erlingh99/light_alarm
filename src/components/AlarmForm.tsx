@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { TimePicker } from "./TimePicker";
 import { RecurrenceSelector } from "./RecurrenceSelector";
 import { RecurrencePattern } from "@/types/alarm";
-import { toast } from "@/hooks/use-toast";
 
 interface AlarmFormProps {
   onSubmit: (data: {
@@ -31,39 +30,18 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an alarm name",
-        variant: "destructive",
-      });
       return;
     }
 
     if (recurrence.type === "weekly" && (!recurrence.days || recurrence.days.length === 0)) {
-      toast({
-        title: "Error",
-        description: "Please select at least one day for weekly alarm",
-        variant: "destructive",
-      });
       return;
     }
 
     if (recurrence.type === "custom" && (!recurrence.customDates || recurrence.customDates.length === 0)) {
-      toast({
-        title: "Error",
-        description: "Please select at least one date for custom alarm",
-        variant: "destructive",
-      });
       return;
     }
 
     onSubmit({ name, time, recurrence });
-
-    toast({
-      title: "Success",
-      description: "Alarm created successfully",
-      className: "bg-green-500 text-white border-none",
-    });
   };
 
   return (
