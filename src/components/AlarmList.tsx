@@ -17,13 +17,20 @@ const formatRecurrence = (alarm: Alarm) => {
   const { type, days, customDates } = alarm.recurrence;
   if (type === "daily") return "Every day";
   if (type === "weekly" && days) {
-    const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const weekDayIndices = [1, 2, 3, 4, 5, 6, 0];
-    const displayIndices = days.map(d => weekDayIndices.indexOf(d));
-    return `Every ${displayIndices.map(i => weekDays[i]).join(", ")}`;
+    // Use these arrays to map day indices to day names
+    const weekDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    
+    // Sort days in order from Sunday to Saturday
+    const sortedDays = [...days].sort((a, b) => a - b);
+    return `Every ${sortedDays.map(d => weekDayNames[d]).join(", ")}`;
   }
   if (type === "custom" && customDates) {
-    return customDates
+    // Sort dates chronologically
+    const sortedDates = [...customDates].sort((a, b) => 
+      new Date(a).getTime() - new Date(b).getTime()
+    );
+    
+    return sortedDates
       .map(date => format(new Date(date), "MMM d"))
       .join(", ");
   }

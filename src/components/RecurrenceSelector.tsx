@@ -26,10 +26,28 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
   const handleDateSelect = (dates: Date[] | undefined) => {
     if (!dates) return;
     
-    const newDates = dates.map(date => date.toISOString());
+    // Sort dates chronologically
+    const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
+    const newDates = sortedDates.map(date => date.toISOString());
+    
     onChange({
       ...value,
       customDates: newDates,
+    });
+  };
+
+  const handleDaySelect = (checked: boolean | "indeterminate", dayIndex: number) => {
+    const days = value.days || [];
+    let newDays = checked
+      ? [...days, dayIndex]
+      : days.filter((d) => d !== dayIndex);
+    
+    // Sort days in calendar order (Sunday = 0, Monday = 1, etc.)
+    newDays = newDays.sort((a, b) => a - b);
+    
+    onChange({
+      ...value,
+      days: newDays,
     });
   };
 
@@ -69,15 +87,9 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
                 <Checkbox
                   id={day}
                   checked={(value.days || []).includes(weekDayIndices[index])}
-                  onCheckedChange={(checked) => {
-                    const days = value.days || [];
-                    onChange({
-                      ...value,
-                      days: checked
-                        ? [...days, weekDayIndices[index]]
-                        : days.filter((d) => d !== weekDayIndices[index]),
-                    });
-                  }}
+                  onCheckedChange={(checked) => 
+                    handleDaySelect(checked, weekDayIndices[index])
+                  }
                 />
                 <Label htmlFor={day}>{day}</Label>
               </div>
