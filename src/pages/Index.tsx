@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Moon, Sun } from "lucide-react";
 import { alarmService } from "@/services/alarmService";
-import { Alarm } from "@/types/alarm";
+import { Alarm, IntensityCurve } from "@/types/alarm";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 
@@ -24,8 +24,22 @@ const Index = () => {
   });
 
   const createAlarmMutation = useMutation({
-    mutationFn: (data: { name: string; time: string; color: string; recurrence: Alarm["recurrence"] }) =>
-      alarmService.createAlarm(data.name, data.time, data.recurrence, data.color),
+    mutationFn: (data: { 
+      name: string; 
+      time: string; 
+      color: string; 
+      length: number;
+      intensityCurve: IntensityCurve;
+      recurrence: Alarm["recurrence"]; 
+    }) =>
+      alarmService.createAlarm(
+        data.name, 
+        data.time, 
+        data.recurrence, 
+        data.color,
+        data.length,
+        data.intensityCurve
+      ),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
@@ -89,6 +103,8 @@ const Index = () => {
     name: string;
     time: string;
     color: string;
+    length: number;
+    intensityCurve: IntensityCurve;
     recurrence: Alarm["recurrence"];
   }) => {
     if (editingAlarm) {

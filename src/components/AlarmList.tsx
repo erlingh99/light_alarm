@@ -3,7 +3,7 @@ import React from "react";
 import { Alarm } from "@/types/alarm";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Clock } from "lucide-react";
 import { format } from "date-fns";
 
 interface AlarmListProps {
@@ -67,9 +67,16 @@ export const AlarmList: React.FC<AlarmListProps> = ({
               />
               <h3 className="font-medium">{alarm.name}</h3>
             </div>
-            <div className="flex gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>{alarm.time}</span>
+              <span className="flex items-center">
+                <Clock className="h-3 w-3 mr-1" /> 
+                {alarm.length} min
+              </span>
               <span>{formatRecurrence(alarm)}</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              <span>Intensity: {alarm.intensityCurve.startIntensity}% → {alarm.intensityCurve.endIntensity}% ({alarm.intensityCurve.curve})</span>
             </div>
           </div>
 

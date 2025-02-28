@@ -1,5 +1,5 @@
 
-import { Alarm, RecurrencePattern } from "@/types/alarm";
+import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
 
 // Mock database
 let alarms: Alarm[] = [];
@@ -15,13 +15,21 @@ export const alarmService = {
     name: string,
     time: string,
     recurrence: RecurrencePattern,
-    color: string
+    color: string,
+    length: number = 15, // Default 15 minutes
+    intensityCurve: IntensityCurve = {
+      startIntensity: 0,
+      endIntensity: 100,
+      curve: "linear"
+    }
   ): Promise<Alarm> => {
     const newAlarm: Alarm = {
       id: generateId(),
       name,
       time,
       color,
+      length,
+      intensityCurve,
       isActive: true,
       recurrence,
       createdAt: new Date().toISOString(),
