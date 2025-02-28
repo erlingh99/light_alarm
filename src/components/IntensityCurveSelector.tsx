@@ -129,7 +129,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
             <path
               d={pathCommand}
               fill="none"
-              stroke={value.color || "#4CAF50"}
+              stroke="#4CAF50"
               strokeWidth="2"
             />
             
@@ -138,7 +138,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
               cx="0"
               cy={svgHeight - (value.startIntensity / 100) * svgHeight}
               r="4"
-              fill={value.color || "#4CAF50"}
+              fill="#4CAF50"
             />
             
             {/* End point */}
@@ -146,7 +146,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
               cx={svgWidth}
               cy={svgHeight - (value.endIntensity / 100) * svgHeight}
               r="4"
-              fill={value.color || "#4CAF50"}
+              fill="#4CAF50"
             />
           </svg>
           <div className="flex justify-between text-xs text-muted-foreground mt-1">

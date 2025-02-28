@@ -159,7 +159,7 @@ const Index = () => {
                 New Alarm
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingAlarm ? "Edit Alarm" : "Create New Alarm"}
