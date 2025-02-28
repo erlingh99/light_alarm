@@ -3,12 +3,23 @@ import React, { useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface ColorPickerProps {
   value: string;
   onChange: (color: string) => void;
   className?: string;
 }
+
+// Pre-selected color options
+const presetColors = [
+  "#9b87f5", // Primary Purple
+  "#7E69AB", // Secondary Purple 
+  "#8B5CF6", // Vivid Purple
+  "#D946EF", // Magenta Pink
+  "#F97316", // Bright Orange
+  "#0EA5E9", // Ocean Blue
+];
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   value,
@@ -56,25 +67,33 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         </div>
         
         <div className="flex-grow">
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder="#RRGGBB"
-              value={hexInput}
-              onChange={handleHexInputChange}
-              className="font-mono"
-              maxLength={7}
-            />
-            <div 
-              className="h-8 w-8 rounded-full border border-input" 
-              style={{ backgroundColor: safeColor }}
-            />
-          </div>
+          <Input
+            type="text"
+            placeholder="#RRGGBB"
+            value={hexInput}
+            onChange={handleHexInputChange}
+            className="font-mono"
+            maxLength={7}
+          />
         </div>
       </div>
       
+      <div className="flex flex-wrap gap-2 mt-2">
+        {presetColors.map((color) => (
+          <Button
+            key={color}
+            type="button"
+            onClick={() => onChange(color)}
+            className="w-8 h-8 p-0 rounded-full"
+            style={{ backgroundColor: color }}
+            variant="outline"
+            aria-label={`Select color ${color}`}
+          />
+        ))}
+      </div>
+      
       <p className="text-xs text-muted-foreground">
-        Choose a color from the color wheel or enter a valid hex code (e.g., #FF5733)
+        Choose a color from the color wheel, select a preset, or enter a valid hex code (e.g., #FF5733)
       </p>
     </div>
   );
