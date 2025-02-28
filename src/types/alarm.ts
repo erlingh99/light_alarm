@@ -10,6 +10,7 @@ export type Alarm = {
   id: string;
   name: string;
   time: string;
+  color: string; // New field for storing hex color code
   isActive: boolean;
   recurrence: RecurrencePattern;
   createdAt: string;

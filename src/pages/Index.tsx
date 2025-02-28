@@ -24,8 +24,8 @@ const Index = () => {
   });
 
   const createAlarmMutation = useMutation({
-    mutationFn: (data: { name: string; time: string; recurrence: Alarm["recurrence"] }) =>
-      alarmService.createAlarm(data.name, data.time, data.recurrence),
+    mutationFn: (data: { name: string; time: string; color: string; recurrence: Alarm["recurrence"] }) =>
+      alarmService.createAlarm(data.name, data.time, data.recurrence, data.color),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
@@ -88,6 +88,7 @@ const Index = () => {
   const handleSubmit = (data: {
     name: string;
     time: string;
+    color: string;
     recurrence: Alarm["recurrence"];
   }) => {
     if (editingAlarm) {

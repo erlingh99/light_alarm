@@ -14,12 +14,14 @@ export const alarmService = {
   createAlarm: async (
     name: string,
     time: string,
-    recurrence: RecurrencePattern
+    recurrence: RecurrencePattern,
+    color: string
   ): Promise<Alarm> => {
     const newAlarm: Alarm = {
       id: generateId(),
       name,
       time,
+      color,
       isActive: true,
       recurrence,
       createdAt: new Date().toISOString(),

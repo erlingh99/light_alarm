@@ -50,9 +50,16 @@ export const AlarmList: React.FC<AlarmListProps> = ({
         <div
           key={alarm.id}
           className="flex items-center justify-between p-4 rounded-lg bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm hover:shadow-md transition-all"
+          style={{ borderLeft: `4px solid ${alarm.color}` }}
         >
           <div className="flex-1">
-            <h3 className="font-medium">{alarm.name}</h3>
+            <div className="flex items-center">
+              <div 
+                className="w-3 h-3 rounded-full mr-2" 
+                style={{ backgroundColor: alarm.color }} 
+              />
+              <h3 className="font-medium">{alarm.name}</h3>
+            </div>
             <div className="flex gap-4 text-sm text-muted-foreground">
               <span>{alarm.time}</span>
               <span>{formatRecurrence(alarm)}</span>
