@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Moon, Sun } from "lucide-react";
 import { alarmService } from "@/services/alarmService";
-import { Alarm, IntensityCurve } from "@/types/alarm";
+import { Alarm, IntensityCurve, RecurrencePattern } from "@/types/alarm";
 import { useToast } from "@/hooks/use-toast";
 import { useTheme } from "next-themes";
 
@@ -30,7 +30,7 @@ const Index = () => {
       color: string; 
       length: number;
       intensityCurve: IntensityCurve;
-      recurrence: Alarm["recurrence"]; 
+      recurrence: RecurrencePattern; 
     }) =>
       alarmService.createAlarm(
         data.name, 
@@ -105,7 +105,7 @@ const Index = () => {
     color: string;
     length: number;
     intensityCurve: IntensityCurve;
-    recurrence: Alarm["recurrence"];
+    recurrence: RecurrencePattern;
   }) => {
     if (editingAlarm) {
       updateAlarmMutation.mutate({

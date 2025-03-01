@@ -16,9 +16,8 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
   value,
   onChange,
 }) => {
-  // Reorder weekdays to start with Monday
+  
   const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const weekDayIndices = [1, 2, 3, 4, 5, 6, 0]; // Map display order to actual day indices
 
   // Convert dates array to Date objects for the calendar
   const selectedDates = value.customDates?.map(date => new Date(date)) || [];
@@ -42,7 +41,7 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
       ? [...days, dayIndex]
       : days.filter((d) => d !== dayIndex);
     
-    // Sort days in calendar order (Sunday = 0, Monday = 1, etc.)
+    // Sort days in calendar order (Monday = 0, etc.)
     newDays = newDays.sort((a, b) => a - b);
     
     onChange({
@@ -86,9 +85,9 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
               >
                 <Checkbox
                   id={day}
-                  checked={(value.days || []).includes(weekDayIndices[index])}
+                  checked={(value.days || []).includes(index)}
                   onCheckedChange={(checked) => 
-                    handleDaySelect(checked, weekDayIndices[index])
+                    handleDaySelect(checked, index)
                   }
                 />
                 <Label htmlFor={day}>{day}</Label>

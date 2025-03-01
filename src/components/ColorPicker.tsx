@@ -41,7 +41,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
   const handleHexInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     setHexInput(newHex);
-    
+
     // Validate hex code format (#RRGGBB or #RGB)
     if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(newHex)) {
       onChange(newHex);
@@ -78,7 +78,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
         </div>
       </div>
       
-      <div className="flex flex-wrap gap-2 mt-2">
+      <div className="flex flex-wrap gap-2">
         {presetColors.map((color) => (
           <Button
             key={color}

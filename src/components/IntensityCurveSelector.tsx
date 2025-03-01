@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IntensityCurve } from "@/types/alarm";
@@ -29,7 +28,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
     });
   };
 
-  const handleCurveTypeChange = (curveType: "linear" | "exponential" | "s-curve") => {
+  const handleCurveTypeChange = (curveType: "linear" | "quadratic" | "s-curve" | "asymptotic") => {
     onChange({
       ...value,
       curve: curveType,
@@ -40,25 +39,27 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   const getCurvePoints = () => {
     const { startIntensity, endIntensity, curve } = value;
     const points = [];
-    const steps = 10;
+    const steps = 20;
     
     for (let i = 0; i <= steps; i++) {
       const x = i / steps;
-      let y;
+      let y: number;
       
       switch (curve) {
+        default:
         case "linear":
           y = startIntensity + (endIntensity - startIntensity) * x;
           break;
-        case "exponential":
+        case "quadratic":
           y = startIntensity + (endIntensity - startIntensity) * (x * x);
           break;
         case "s-curve":
           // Simple S-curve using sine function
           y = startIntensity + (endIntensity - startIntensity) * (0.5 + 0.5 * Math.sin(Math.PI * (x - 0.5)));
           break;
-        default:
-          y = startIntensity + (endIntensity - startIntensity) * x;
+        case "asymptotic":
+          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/0.25));
+          break;
       }
       
       points.push({ x: x * 100, y });
@@ -68,30 +69,35 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   };
   
   const curvePoints = getCurvePoints();
-  const svgHeight = 100;
-  const svgWidth = 200;
+  const svgHeight = 120;
+  const svgWidth = Math.min(400, window.innerWidth*0.75);
+  const padding = 10;
+
+
   
   const pathCommand = curvePoints.map((point, i) => {
-    const x = (point.x / 100) * svgWidth;
-    const y = svgHeight - (point.y / 100) * svgHeight;
+    const x = (point.x / 100) * (svgWidth - padding) + padding/2;
+    const y = (1 - point.y / 100) * (svgHeight - padding) + padding/2;
     return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
   }).join(' ');
 
   return (
     <div className="space-y-4">
       <div>
+        {window.innerWidth};
         <Label>Intensity Curve</Label>
         <Select 
           value={value.curve}
-          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "exponential" | "s-curve")}
+          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "asymptotic" | "s-curve" | "quadratic")}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select curve type" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="linear">Linear</SelectItem>
-            <SelectItem value="exponential">Exponential</SelectItem>
+            <SelectItem value="quadratic">Quadratic</SelectItem>
             <SelectItem value="s-curve">S-Curve</SelectItem>
+            <SelectItem value="asymptotic">Asymptotic</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -122,8 +128,8 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
         <div className="border rounded-md p-4 bg-background/50">
           <svg width={svgWidth} height={svgHeight} className="w-full">
             {/* Grid lines */}
-            <line x1="0" y1={svgHeight} x2={svgWidth} y2={svgHeight} stroke="#ddd" strokeWidth="1" />
-            <line x1="0" y1="0" x2="0" y2={svgHeight} stroke="#ddd" strokeWidth="1" />
+            <line x1={padding/2} y1={svgHeight-padding/2} x2={svgWidth-padding/2} y2={svgHeight-padding/2} stroke="#ddd" strokeWidth="1" />
+            <line x1={padding/2} y1={padding/2} x2={padding/2} y2={svgHeight-padding/2} stroke="#ddd" strokeWidth="1" />
             
             {/* Curve path */}
             <path
@@ -135,16 +141,16 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
             
             {/* Start point */}
             <circle
-              cx="0"
-              cy={svgHeight - (value.startIntensity / 100) * svgHeight}
+              cx={padding/2}
+              cy={(1 - value.startIntensity / 100) * (svgHeight - padding) + padding/2}
               r="4"
               fill="#4CAF50"
             />
             
             {/* End point */}
             <circle
-              cx={svgWidth}
-              cy={svgHeight - (value.endIntensity / 100) * svgHeight}
+              cx={svgWidth - padding/2}
+              cy={(1 - value.endIntensity / 100) * (svgHeight - padding) + padding/2}
               r="4"
               fill="#4CAF50"
             />

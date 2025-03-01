@@ -18,7 +18,7 @@ const formatRecurrence = (alarm: Alarm) => {
   if (type === "daily") return "Every day";
   if (type === "weekly" && days) {
     // Use these arrays to map day indices to day names
-    const weekDayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const weekDayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     
     // Sort days in order from Sunday to Saturday
     const sortedDays = [...days].sort((a, b) => a - b);
@@ -31,10 +31,10 @@ const formatRecurrence = (alarm: Alarm) => {
     );
     
     return sortedDates
-      .map(date => format(new Date(date), "MMM d"))
+      .map(date => format(new Date(date), "d MMM"))
       .join(", ");
   }
-  return "Custom";
+  return "Something went wrong";
 };
 
 export const AlarmList: React.FC<AlarmListProps> = ({
@@ -69,11 +69,14 @@ export const AlarmList: React.FC<AlarmListProps> = ({
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
               <span>{alarm.time}</span>
+              -
+              <span>{formatRecurrence(alarm)}</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
               <span className="flex items-center">
                 <Clock className="h-3 w-3 mr-1" /> 
                 {alarm.length} min
               </span>
-              <span>{formatRecurrence(alarm)}</span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               <span>Intensity: {alarm.intensityCurve.startIntensity}% → {alarm.intensityCurve.endIntensity}% ({alarm.intensityCurve.curve})</span>

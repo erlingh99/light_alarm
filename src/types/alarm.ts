@@ -1,7 +1,7 @@
 
 export type RecurrencePattern = {
   type: "daily" | "weekly" | "custom";
-  days?: number[];  // 0-6 for weekly/custom (Sunday-Saturday)
+  days?: number[];  // 0-6 for weekly/custom (Monday-Sunday)
   interval?: number; // For daily/custom (every X days)
   customDates?: string[]; // For custom dates in ISO format
 };
@@ -9,7 +9,7 @@ export type RecurrencePattern = {
 export type IntensityCurve = {
   startIntensity: number; // 0-100
   endIntensity: number; // 0-100
-  curve: "linear" | "exponential" | "s-curve"; // Type of curve
+  curve: "linear" | "asymptotic" | "s-curve" | "quadratic"; // Type of curve
 };
 
 export type Alarm = {

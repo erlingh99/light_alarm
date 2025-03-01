@@ -25,7 +25,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
-      <Label htmlFor="time">Time (24h)</Label>
+      <Label htmlFor="time">Time</Label>
       <Input
         type="time"
         id="time"
