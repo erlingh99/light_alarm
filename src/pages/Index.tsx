@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlarmForm } from "@/components/AlarmForm";
@@ -8,13 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Moon, Sun } from "lucide-react";
 import { alarmService } from "@/services/alarmService";
 import { Alarm, IntensityCurve, RecurrencePattern } from "@/types/alarm";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useTheme } from "next-themes";
 
 const Index = () => {
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
 
@@ -43,17 +41,14 @@ const Index = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Alarm created successfully",
+      toast.success("Alarm created successfully", {
+        duration: 3000,
         className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to create alarm",
-        variant: "destructive",
+      toast.error("Failed to create alarm", {
+        duration: 3000,
       });
     },
   });
@@ -65,17 +60,14 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
       setEditingAlarm(null);
-      toast({
-        title: "Success",
-        description: "Alarm updated successfully",
+      toast.success("Alarm updated successfully", {
+        duration: 3000,
         className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to update alarm",
-        variant: "destructive",
+      toast.error("Failed to update alarm", {
+        duration: 3000,
       });
     },
   });
@@ -84,17 +76,14 @@ const Index = () => {
     mutationFn: alarmService.deleteAlarm,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
-      toast({
-        title: "Success",
-        description: "Alarm deleted successfully",
+      toast.success("Alarm deleted successfully", {
+        duration: 3000,
         className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to delete alarm",
-        variant: "destructive",
+      toast.error("Failed to delete alarm", {
+        duration: 3000,
       });
     },
   });
