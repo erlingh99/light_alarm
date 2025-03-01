@@ -74,15 +74,38 @@ const Index = () => {
 
   const deleteAlarmMutation = useMutation({
     mutationFn: alarmService.deleteAlarm,
-    onSuccess: () => {
+    onSuccess: (_, deletedAlarmId) => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
+      
       toast.success("Alarm deleted successfully", {
-        duration: 3000,
+        duration: 5000,
         className: "bg-sage text-white border-none",
+        action: {
+          label: "Undo",
+          onClick: () => restoreAlarmMutation.mutate(deletedAlarmId),
+        },
       });
     },
     onError: (error) => {
       toast.error("Failed to delete alarm", {
+        duration: 3000,
+      });
+    },
+  });
+
+  const restoreAlarmMutation = useMutation({
+    mutationFn: alarmService.restoreAlarm,
+    onSuccess: (restoredAlarm) => {
+      if (restoredAlarm) {
+        queryClient.invalidateQueries({ queryKey: ["alarms"] });
+        toast.success("Alarm restored successfully", {
+          duration: 3000,
+          className: "bg-sage text-white border-none",
+        });
+      }
+    },
+    onError: (error) => {
+      toast.error("Failed to restore alarm", {
         duration: 3000,
       });
     },

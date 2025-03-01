@@ -3,6 +3,7 @@ import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
 
 // Mock database
 let alarms: Alarm[] = [];
+let deletedAlarms: Record<string, Alarm> = {};
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -52,6 +53,27 @@ export const alarmService = {
   },
 
   deleteAlarm: async (id: string): Promise<void> => {
-    alarms = alarms.filter((a) => a.id !== id);
+    const alarmToDelete = alarms.find(a => a.id === id);
+    if (alarmToDelete) {
+      // Store the deleted alarm for potential restoration
+      deletedAlarms[id] = alarmToDelete;
+      
+      // Remove from active alarms
+      alarms = alarms.filter((a) => a.id !== id);
+    }
   },
+
+  restoreAlarm: async (id: string): Promise<Alarm | null> => {
+    const deletedAlarm = deletedAlarms[id];
+    if (deletedAlarm) {
+      // Add back to active alarms
+      alarms.push(deletedAlarm);
+      
+      // Remove from deleted alarms
+      delete deletedAlarms[id];
+      
+      return deletedAlarm;
+    }
+    return null;
+  }
 };
