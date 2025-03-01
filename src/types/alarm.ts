@@ -1,8 +1,7 @@
 
 export type RecurrencePattern = {
   type: "daily" | "weekly" | "custom";
-  days?: number[];  // 0-6 for weekly/custom (Monday-Sunday)
-  interval?: number; // For daily/custom (every X days)
+  days?: number[];  // 0-6 for weekly (Monday-Sunday)
   customDates?: string[]; // For custom dates in ISO format
 };
 

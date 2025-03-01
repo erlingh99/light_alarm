@@ -86,7 +86,7 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Morning Workout"
+          placeholder="Rise and shine"
           className="mt-1"
         />
       </div>

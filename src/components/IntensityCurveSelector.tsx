@@ -84,7 +84,6 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div>
-        {window.innerWidth};
         <Label>Intensity Curve</Label>
         <Select 
           value={value.curve}
