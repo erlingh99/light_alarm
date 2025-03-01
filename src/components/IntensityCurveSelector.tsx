@@ -58,7 +58,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
           y = startIntensity + (endIntensity - startIntensity) * (0.5 + 0.5 * Math.sin(Math.PI * (x - 0.5)));
           break;
         case "asymptotic":
-          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/0.25));
+          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/0.25))/(1 - Math.exp(-1/0.25));
           break;
       }
       

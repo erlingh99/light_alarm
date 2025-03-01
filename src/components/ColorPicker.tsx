@@ -13,9 +13,9 @@ interface ColorPickerProps {
 
 // Pre-selected color options
 const presetColors = [
-  "#9b87f5", // Primary Purple
-  "#7E69AB", // Secondary Purple 
-  "#8B5CF6", // Vivid Purple
+  "#F6E7D2", // Warm white
+  "#FFDC52", // Light yellow 
+  "#ffdba8", // Warmer white
   "#D946EF", // Magenta Pink
   "#F97316", // Bright Orange
   "#0EA5E9", // Ocean Blue

@@ -32,7 +32,7 @@ interface AlarmFormProps {
 
 export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) => {
   const [name, setName] = useState(initialData?.name || "");
-  const [time, setTime] = useState(initialData?.time || "00:00");
+  const [time, setTime] = useState(initialData?.time || "08:00");
   const [color, setColor] = useState(initialData?.color || "#4CAF50");
   const [length, setLength] = useState(initialData?.length || 15);
   const [intensityCurve, setIntensityCurve] = useState<IntensityCurve>(
