@@ -1,10 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IntensityCurve } from "@/types/alarm";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface IntensityCurveSelectorProps {
   value: IntensityCurve;
@@ -16,6 +17,25 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   onChange,
 }) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Initialize control points if they don't exist and curve type is custom
+  useEffect(() => {
+    if (value.curve === "custom" && (!value.controlPoints || value.controlPoints.length === 0)) {
+      // Initial control points when switching to custom curve
+      const initialPoints = [
+        { x: 25, y: 25 + value.startIntensity * 0.75 }, 
+        { x: 75, y: 25 + value.endIntensity * 0.75 }
+      ];
+      
+      onChange({
+        ...value,
+        controlPoints: initialPoints
+      });
+    }
+  }, [value.curve]);
 
   const handleStartIntensityChange = (values: number[]) => {
     onChange({
@@ -31,7 +51,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
     });
   };
 
-  const handleCurveTypeChange = (curveType: "linear" | "s-curve" | "asymptotic") => {
+  const handleCurveTypeChange = (curveType: "linear" | "s-curve" | "asymptotic" | "custom") => {
     // Set default hyper-parameter based on curve type
     let hyperParameter: number | undefined;
     if (curveType === "s-curve") hyperParameter = 10; // Default sharpness
@@ -74,6 +94,16 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
           default: 10,
           disabled: false,
         };
+      case "custom":
+        return {
+          name: "Curve Editing",
+          description: "Drag points to create a custom curve shape",
+          min: 0,
+          max: 1,
+          step: 0.1,
+          default: 0,
+          disabled: true,
+        };
       default:
         return {
           name: "Parameter",
@@ -89,9 +119,62 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
 
   const hyperParam = getHyperParameterInfo();
 
+  // Calculate cubic spline for custom curve
+  const calculateCubicSpline = (points: Array<{x: number, y: number}>) => {
+    if (!points || points.length < 2) return "";
+    
+    // Add start and end points based on startIntensity and endIntensity
+    const allPoints = [
+      { x: 0, y: value.startIntensity },
+      ...points,
+      { x: 100, y: value.endIntensity }
+    ].sort((a, b) => a.x - b.x);
+    
+    // For a simple cubic spline implementation, we'll use Catmull-Rom spline
+    // which passes through all control points
+    let pathCommand = `M ${allPoints[0].x} ${100 - allPoints[0].y}`;
+    
+    for (let i = 0; i < allPoints.length - 1; i++) {
+      const p0 = i > 0 ? allPoints[i - 1] : allPoints[0];
+      const p1 = allPoints[i];
+      const p2 = allPoints[i + 1];
+      const p3 = i < allPoints.length - 2 ? allPoints[i + 2] : allPoints[i + 1];
+      
+      // Draw a smooth curve for each segment
+      for (let t = 0; t <= 1; t += 0.1) {
+        const t2 = t * t;
+        const t3 = t2 * t;
+        
+        // Catmull-Rom calculations
+        const x = 0.5 * (
+          (2 * p1.x) +
+          (-p0.x + p2.x) * t +
+          (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+          (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+        );
+        const y = 0.5 * (
+          (2 * p1.y) +
+          (-p0.y + p2.y) * t +
+          (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+          (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+        );
+        
+        pathCommand += ` L ${x} ${100 - y}`;
+      }
+    }
+    
+    return pathCommand;
+  };
+
   // Calculate points for the curve preview
   const getCurvePoints = () => {
-    const { startIntensity, endIntensity, curve, hyperParameter } = value;
+    const { startIntensity, endIntensity, curve, hyperParameter, controlPoints } = value;
+    
+    if (curve === "custom" && controlPoints && controlPoints.length > 0) {
+      // For custom curve, we return an empty array as we'll draw the spline directly
+      return [];
+    }
+    
     const points = [];
     const steps = 50;
     
@@ -125,16 +208,98 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
     return points;
   };
   
-  const curvePoints = getCurvePoints();
+  // Handle mouse events for custom curve editing
   const svgHeight = 120;
-  const svgWidth = Math.min(400, window.innerWidth*0.75);
+  const svgWidth = typeof window !== 'undefined' ? Math.min(400, window.innerWidth*0.75) : 400;
   const padding = 10;
 
-  const pathCommand = curvePoints.map((point, i) => {
-    const x = (point.x / 100) * (svgWidth - padding) + padding/2;
-    const y = (1 - point.y / 100) * (svgHeight - padding) + padding/2;
-    return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
-  }).join(' ');
+  const getSvgCoordinates = (event: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    
+    const svgRect = svgRef.current.getBoundingClientRect();
+    let x = ((event.clientX - svgRect.left) / (svgRect.right - svgRect.left)) * 100;
+    let y = 100 - ((event.clientY - svgRect.top) / (svgRect.bottom - svgRect.top)) * 100;
+    
+    // Constrain x to be between 1 and 99 to ensure points can't overlap start/end
+    x = Math.max(1, Math.min(99, x));
+    // Constrain y to be between 0 and 100
+    y = Math.max(0, Math.min(100, y));
+    
+    return { x, y };
+  };
+
+  const handleSvgMouseDown = (event: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    if (value.curve !== "custom") return;
+    
+    const coords = getSvgCoordinates(event);
+    const controlPoints = value.controlPoints || [];
+    
+    // Check if we're near an existing point (to move it)
+    const pointIndex = controlPoints.findIndex(point => {
+      const distance = Math.sqrt(Math.pow(point.x - coords.x, 2) + Math.pow(point.y - coords.y, 2));
+      return distance < 10; // 10 is the "snap" distance
+    });
+    
+    if (pointIndex >= 0) {
+      // We're on an existing point, prepare to move it
+      setActivePointIndex(pointIndex);
+      setIsDragging(true);
+    } else {
+      // We're adding a new point
+      const newPoints = [...controlPoints, coords].sort((a, b) => a.x - b.x);
+      onChange({
+        ...value,
+        controlPoints: newPoints
+      });
+    }
+  };
+
+  const handleSvgMouseMove = (event: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    if (!isDragging || activePointIndex === null || value.curve !== "custom") return;
+    
+    const coords = getSvgCoordinates(event);
+    const controlPoints = [...(value.controlPoints || [])];
+    
+    // Update the position of the active point
+    controlPoints[activePointIndex] = coords;
+    
+    // Re-sort points by x-coordinate
+    const sortedPoints = controlPoints.sort((a, b) => a.x - b.x);
+    
+    onChange({
+      ...value,
+      controlPoints: sortedPoints
+    });
+  };
+
+  const handleSvgMouseUp = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      setActivePointIndex(null);
+    }
+  };
+
+  const handleDeletePoint = (index: number) => {
+    if (!value.controlPoints) return;
+    
+    const newPoints = [...value.controlPoints];
+    newPoints.splice(index, 1);
+    
+    onChange({
+      ...value,
+      controlPoints: newPoints
+    });
+  };
+
+  // Draw curve based on points or spline
+  const curvePoints = getCurvePoints();
+  const pathCommand = value.curve === "custom" 
+    ? calculateCubicSpline(value.controlPoints || [])
+    : curvePoints.map((point, i) => {
+        const x = (point.x / 100) * (svgWidth - padding) + padding/2;
+        const y = (1 - point.y / 100) * (svgHeight - padding) + padding/2;
+        return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).join(' ');
 
   return (
     <div className="space-y-4">
@@ -142,7 +307,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
         <Label>Intensity Curve</Label>
         <Select 
           value={value.curve}
-          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "asymptotic" | "s-curve")}
+          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "asymptotic" | "s-curve" | "custom")}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select curve type" />
@@ -151,6 +316,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
             <SelectItem value="linear">Linear</SelectItem>
             <SelectItem value="s-curve">S-Curve</SelectItem>
             <SelectItem value="asymptotic">Asymptotic</SelectItem>
+            <SelectItem value="custom">Custom</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -196,22 +362,44 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
             </Label>
             <div className="text-xs text-muted-foreground mb-2">{hyperParam.description}</div>
             
-            <Slider
-              value={[value.hyperParameter !== undefined ? value.hyperParameter : hyperParam.default]}
-              min={hyperParam.min}
-              max={hyperParam.max}
-              step={hyperParam.step}
-              onValueChange={(values) => handleHyperParameterChange(values[0])}
-              disabled={hyperParam.disabled}
-              className={hyperParam.disabled ? "opacity-50" : ""}
-            />
+            {value.curve !== "custom" && (
+              <Slider
+                value={[value.hyperParameter !== undefined ? value.hyperParameter : hyperParam.default]}
+                min={hyperParam.min}
+                max={hyperParam.max}
+                step={hyperParam.step}
+                onValueChange={(values) => handleHyperParameterChange(values[0])}
+                disabled={hyperParam.disabled}
+                className={hyperParam.disabled ? "opacity-50" : ""}
+              />
+            )}
+
+            {value.curve === "custom" && (
+              <div className="text-xs text-primary-foreground mt-1">
+                • Click on the graph to add control points<br />
+                • Drag points to adjust the curve<br />
+                • Double-click a point to remove it
+              </div>
+            )}
           </div>
         </div>
       )}
 
       <div className="pt-2">
         <div className="border rounded-md p-4 bg-background/50">
-          <svg width={svgWidth} height={svgHeight} className="w-full">
+          <svg 
+            ref={svgRef}
+            width={svgWidth} 
+            height={svgHeight} 
+            className={cn(
+              "w-full", 
+              value.curve === "custom" && "cursor-pointer"
+            )}
+            onMouseDown={handleSvgMouseDown}
+            onMouseMove={handleSvgMouseMove}
+            onMouseUp={handleSvgMouseUp}
+            onMouseLeave={handleSvgMouseUp}
+          >
             {/* Grid lines */}
             <line x1={padding/2} y1={svgHeight-padding/2} x2={svgWidth-padding/2} y2={svgHeight-padding/2} stroke="#ddd" strokeWidth="1" />
             <line x1={padding/2} y1={padding/2} x2={padding/2} y2={svgHeight-padding/2} stroke="#ddd" strokeWidth="1" />
@@ -239,6 +427,21 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
               r="4"
               fill="#4CAF50"
             />
+
+            {/* Control points for custom curve */}
+            {value.curve === "custom" && value.controlPoints && value.controlPoints.map((point, index) => (
+              <g key={index} onDoubleClick={() => handleDeletePoint(index)}>
+                <circle
+                  cx={(point.x / 100) * (svgWidth - padding) + padding/2}
+                  cy={(1 - point.y / 100) * (svgHeight - padding) + padding/2}
+                  r="5"
+                  fill={activePointIndex === index ? "#2a9134" : "#4CAF50"}
+                  stroke="#fff"
+                  strokeWidth="1.5"
+                  className="cursor-move"
+                />
+              </g>
+            ))}
           </svg>
           <div className="flex justify-between text-xs text-muted-foreground mt-1">
             <span>0%</span>
