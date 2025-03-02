@@ -1,9 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IntensityCurve } from "@/types/alarm";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface IntensityCurveSelectorProps {
   value: IntensityCurve;
@@ -14,6 +18,8 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   value,
   onChange,
 }) => {
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
   const handleStartIntensityChange = (values: number[]) => {
     onChange({
       ...value,
@@ -29,17 +35,72 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   };
 
   const handleCurveTypeChange = (curveType: "linear" | "quadratic" | "s-curve" | "asymptotic") => {
+    // Set default hyper-parameter based on curve type
+    let hyperParameter: number | undefined;
+    if (curveType === "s-curve") hyperParameter = 1.0; // Default sharpness
+    else if (curveType === "asymptotic") hyperParameter = 0.25; // Default decay rate
+    
     onChange({
       ...value,
       curve: curveType,
+      hyperParameter,
     });
   };
 
+  const handleHyperParameterChange = (newValue: number) => {
+    onChange({
+      ...value,
+      hyperParameter: newValue,
+    });
+  };
+
+  // Get description and range for the current curve's hyper-parameter
+  const getHyperParameterInfo = () => {
+    switch (value.curve) {
+      case "s-curve":
+        return {
+          name: "Sharpness",
+          description: "Controls how sharp the S-curve transition is (higher = sharper)",
+          min: 0.1,
+          max: 5,
+          step: 0.1,
+          default: 1.0,
+          disabled: false,
+        };
+      case "asymptotic":
+        return {
+          name: "Decay Rate",
+          description: "Controls how quickly the curve approaches its asymptote (lower = faster)",
+          min: 0.05,
+          max: 1,
+          step: 0.05,
+          default: 0.25,
+          disabled: false,
+        };
+      default:
+        return {
+          name: "Parameter",
+          description: "No adjustable parameters for this curve type",
+          min: 0,
+          max: 1,
+          step: 0.1,
+          default: 0,
+          disabled: true,
+        };
+    }
+  };
+
+  const hyperParam = getHyperParameterInfo();
+
   // Calculate points for the curve preview
   const getCurvePoints = () => {
-    const { startIntensity, endIntensity, curve } = value;
+    const { startIntensity, endIntensity, curve, hyperParameter } = value;
     const points = [];
     const steps = 20;
+    
+    // Use default or current hyperParameter value
+    const param = hyperParameter !== undefined ? hyperParameter : 
+      (curve === "s-curve" ? 1.0 : curve === "asymptotic" ? 0.25 : 0);
     
     for (let i = 0; i <= steps; i++) {
       const x = i / steps;
@@ -54,11 +115,13 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
           y = startIntensity + (endIntensity - startIntensity) * (x * x);
           break;
         case "s-curve":
-          // Simple S-curve using sine function
-          y = startIntensity + (endIntensity - startIntensity) * (0.5 + 0.5 * Math.sin(Math.PI * (x - 0.5)));
+          // S-curve using sigmoid function with adjustable sharpness
+          const sigmoid = 1 / (1 + Math.exp(-param * 10 * (x - 0.5)));
+          y = startIntensity + (endIntensity - startIntensity) * sigmoid;
           break;
         case "asymptotic":
-          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/0.25))/(1 - Math.exp(-1/0.25));
+          // Exponential approach with adjustable decay rate
+          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/param))/(1 - Math.exp(-1/param));
           break;
       }
       
@@ -73,8 +136,6 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   const svgWidth = Math.min(400, window.innerWidth*0.75);
   const padding = 10;
 
-
-  
   const pathCommand = curvePoints.map((point, i) => {
     const x = (point.x / 100) * (svgWidth - padding) + padding/2;
     const y = (1 - point.y / 100) * (svgHeight - padding) + padding/2;
@@ -122,6 +183,37 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
           onValueChange={handleEndIntensityChange}
         />
       </div>
+
+      <div className="flex items-center space-x-2 cursor-pointer text-sm text-muted-foreground">
+        <button 
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {showAdvanced ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
+          Advanced Settings
+        </button>
+      </div>
+
+      {showAdvanced && (
+        <div className="pl-4 pt-2 pb-2 border-l-2 border-muted space-y-3">
+          <div className="space-y-1">
+            <Label className={hyperParam.disabled ? "text-muted-foreground" : ""}>
+              {hyperParam.name} {!hyperParam.disabled && value.hyperParameter !== undefined && `(${value.hyperParameter.toFixed(2)})`}
+            </Label>
+            <div className="text-xs text-muted-foreground mb-2">{hyperParam.description}</div>
+            
+            <Slider
+              value={[value.hyperParameter !== undefined ? value.hyperParameter : hyperParam.default]}
+              min={hyperParam.min}
+              max={hyperParam.max}
+              step={hyperParam.step}
+              onValueChange={(values) => handleHyperParameterChange(values[0])}
+              disabled={hyperParam.disabled}
+              className={hyperParam.disabled ? "opacity-50" : ""}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="pt-2">
         <div className="border rounded-md p-4 bg-background/50">
