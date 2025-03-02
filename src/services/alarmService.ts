@@ -3,8 +3,8 @@ import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
 import { INITIAL_ALARM_LENGTH, INITIAL_START_INTENSITY, INITIAL_END_INTENSITY, INITIAL_INTENSITY_TYPE} from "@/consts"
 
 // Mock database
-let alarms: Alarm[] = [];
-let deletedAlarm: Alarm | null;
+const alarms: Alarm[] = [];
+const deletedAlarms: Alarm[] = [];
 
 let counter = 0;
 
@@ -54,23 +54,24 @@ export const alarmService = {
   },
 
   deleteAlarm: async (id: number): Promise<void> => {
-    const alarmToDelete = alarms.find(a => a.id === id);
-    if (alarmToDelete) {
+    const idx = alarms.findIndex(a => a.id === id);
+    if (idx > -1) {
       // Store the deleted alarm for potential restoration
-      deletedAlarm = alarmToDelete;
+      deletedAlarms.push(alarms[idx]);
       
       // Remove from active alarms
-      alarms = alarms.filter((a) => a.id !== id);
+      alarms.splice(idx, 1);
     }
   },
 
   restoreAlarm: async (id: number): Promise<Alarm | null> => {
-    
-    if (deletedAlarm?.id === id) {
+    const idx = deletedAlarms.findIndex(a => a.id === id)
+    if (idx > -1) {
       // Add back to active alarms
-      alarms.push(deletedAlarm);
-      
-      return deletedAlarm;
+      const restore = deletedAlarms[idx];
+      alarms.push(restore);
+      deletedAlarms.splice(idx, 1)
+      return restore;
     }
     return null;
   }
