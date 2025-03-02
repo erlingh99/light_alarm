@@ -29,13 +29,11 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm created successfully", {
         duration: TOAST_DURATION,
-        className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
       toast.error("Failed to create alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -47,13 +45,11 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm updated successfully", {
         duration: TOAST_DURATION,
-        className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
       toast.error("Failed to update alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -65,7 +61,6 @@ export function useAlarmMutations() {
       
       toast.success("Alarm deleted successfully", {
         duration: RESTORE_TOAST_DURATION,
-        className: "bg-sage text-white border-none",
         action: {
           label: "Undo",
           onClick: () => restoreAlarmMutation.mutate(deletedAlarmId),
@@ -75,7 +70,6 @@ export function useAlarmMutations() {
     onError: (error) => {
       toast.error("Failed to delete alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -87,14 +81,12 @@ export function useAlarmMutations() {
         queryClient.invalidateQueries({ queryKey: ["alarms"] });
         toast.success("Alarm restored successfully", {
           duration: TOAST_DURATION,
-          className: "bg-sage text-white border-none",
         });
       }
     },
     onError: (error) => {
       toast.error("Failed to restore alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white border-none",
       });
     },
   });
