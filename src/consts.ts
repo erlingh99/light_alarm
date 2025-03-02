@@ -6,7 +6,7 @@ export const INITIAL_ALARM_LENGTH: number = 15;
 export const INITIAL_ALARM_TIME: string = "08:00";
 export const INITIAL_START_INTENSITY: number = 0;
 export const INITIAL_END_INTENSITY: number = 100;
-export const INITIAL_INTENSITY_TYPE: "linear" | "asymptotic" | "s-curve" | "quadratic" = "linear";
+export const INITIAL_INTENSITY_TYPE: "linear" | "asymptotic" | "s-curve" = "linear";
 export const INITIAL_ALARM_COLOR: string = "#4CAF50"
 
 // Pre-selected color options

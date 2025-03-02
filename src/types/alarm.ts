@@ -8,7 +8,7 @@ export type RecurrencePattern = {
 export type IntensityCurve = {
   startIntensity: number; // 0-100
   endIntensity: number; // 0-100
-  curve: "linear" | "asymptotic" | "s-curve" | "quadratic"; // Type of curve
+  curve: "linear" | "asymptotic" | "s-curve"; // Type of curve
   hyperParameter?: number; // Curve-specific parameter (e.g., sharpness for s-curve, decay rate for asymptotic)
 };
 

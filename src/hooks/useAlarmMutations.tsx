@@ -1,7 +1,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { alarmService } from "@/services/alarmService";
-import { Alarm } from "@/types/alarm";
+import { Alarm, IntensityCurve, RecurrencePattern } from "@/types/alarm";
 import { toast } from "sonner";
 import { TOAST_DURATION, RESTORE_TOAST_DURATION } from "@/consts";
 
@@ -14,8 +14,8 @@ export function useAlarmMutations() {
       time: string; 
       color: string; 
       length: number;
-      intensityCurve: Alarm['intensityCurve'];
-      recurrence: Alarm['recurrence']; 
+      intensityCurve: IntensityCurve;
+      recurrence: RecurrencePattern; 
     }) =>
       alarmService.createAlarm(
         data.name, 
@@ -29,13 +29,11 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm created successfully", {
         duration: TOAST_DURATION,
-        className: "bg-sage text-white",
       });
     },
     onError: (error) => {
       toast.error("Failed to create alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white",
       });
     },
   });
@@ -47,13 +45,11 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm updated successfully", {
         duration: TOAST_DURATION,
-        className: "bg-sage text-white",
       });
     },
     onError: (error) => {
       toast.error("Failed to update alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white",
       });
     },
   });
@@ -65,7 +61,6 @@ export function useAlarmMutations() {
       
       toast.success("Alarm deleted successfully", {
         duration: RESTORE_TOAST_DURATION,
-        className: "bg-sage text-white",
         action: {
           label: "Undo",
           onClick: () => restoreAlarmMutation.mutate(deletedAlarmId),
@@ -75,7 +70,6 @@ export function useAlarmMutations() {
     onError: (error) => {
       toast.error("Failed to delete alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white",
       });
     },
   });
@@ -87,14 +81,12 @@ export function useAlarmMutations() {
         queryClient.invalidateQueries({ queryKey: ["alarms"] });
         toast.success("Alarm restored successfully", {
           duration: TOAST_DURATION,
-          className: "bg-sage text-white",
         });
       }
     },
     onError: (error) => {
       toast.error("Failed to restore alarm", {
         duration: TOAST_DURATION,
-        className: "bg-destructive text-white",
       });
     },
   });

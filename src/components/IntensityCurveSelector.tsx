@@ -5,9 +5,6 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IntensityCurve } from "@/types/alarm";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface IntensityCurveSelectorProps {
   value: IntensityCurve;
@@ -34,11 +31,11 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
     });
   };
 
-  const handleCurveTypeChange = (curveType: "linear" | "quadratic" | "s-curve" | "asymptotic") => {
+  const handleCurveTypeChange = (curveType: "linear" | "s-curve" | "asymptotic") => {
     // Set default hyper-parameter based on curve type
     let hyperParameter: number | undefined;
-    if (curveType === "s-curve") hyperParameter = 1.0; // Default sharpness
-    else if (curveType === "asymptotic") hyperParameter = 0.25; // Default decay rate
+    if (curveType === "s-curve") hyperParameter = 10; // Default sharpness
+    else if (curveType === "asymptotic") hyperParameter = 10; // Default decay rate
     
     onChange({
       ...value,
@@ -61,20 +58,20 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
         return {
           name: "Sharpness",
           description: "Controls how sharp the S-curve transition is (higher = sharper)",
-          min: 0.1,
-          max: 5,
-          step: 0.1,
-          default: 1.0,
+          min: 1,
+          max: 50,
+          step: 1,
+          default: 10,
           disabled: false,
         };
       case "asymptotic":
         return {
           name: "Decay Rate",
-          description: "Controls how quickly the curve approaches its asymptote (lower = faster)",
-          min: 0.05,
-          max: 1,
-          step: 0.05,
-          default: 0.25,
+          description: "Controls how quickly the curve approaches its asymptote (higher = faster)",
+          min: -50,
+          max: 50,
+          step: 1,
+          default: 10,
           disabled: false,
         };
       default:
@@ -96,32 +93,29 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
   const getCurvePoints = () => {
     const { startIntensity, endIntensity, curve, hyperParameter } = value;
     const points = [];
-    const steps = 20;
+    const steps = 50;
     
     // Use default or current hyperParameter value
     const param = hyperParameter !== undefined ? hyperParameter : 
-      (curve === "s-curve" ? 1.0 : curve === "asymptotic" ? 0.25 : 0);
+      (curve === "s-curve" ? 10 : curve === "asymptotic" ? 4 : 0);
     
     for (let i = 0; i <= steps; i++) {
       const x = i / steps;
       let y: number;
       
       switch (curve) {
+        case "asymptotic":
+          if (param) {
+            y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x*param*0.4))/(1 - Math.exp(-param*0.4));
+            break;
+          }
+          //falls through when param is 0
         default:
         case "linear":
           y = startIntensity + (endIntensity - startIntensity) * x;
           break;
-        case "quadratic":
-          y = startIntensity + (endIntensity - startIntensity) * (x * x);
-          break;
         case "s-curve":
-          // S-curve using sigmoid function with adjustable sharpness
-          const sigmoid = 1 / (1 + Math.exp(-param * 10 * (x - 0.5)));
-          y = startIntensity + (endIntensity - startIntensity) * sigmoid;
-          break;
-        case "asymptotic":
-          // Exponential approach with adjustable decay rate
-          y = startIntensity + (endIntensity - startIntensity) * (1 - Math.exp(-x/param))/(1 - Math.exp(-1/param));
+          y = startIntensity + (endIntensity - startIntensity) * (Math.exp(param * x) - 1) / ((Math.exp(0.5*param) - 1)*(1 + Math.exp(param * (x - 0.5))));
           break;
       }
       
@@ -148,14 +142,13 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
         <Label>Intensity Curve</Label>
         <Select 
           value={value.curve}
-          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "asymptotic" | "s-curve" | "quadratic")}
+          onValueChange={(val) => handleCurveTypeChange(val as "linear" | "asymptotic" | "s-curve")}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select curve type" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="linear">Linear</SelectItem>
-            <SelectItem value="quadratic">Quadratic</SelectItem>
             <SelectItem value="s-curve">S-Curve</SelectItem>
             <SelectItem value="asymptotic">Asymptotic</SelectItem>
           </SelectContent>
@@ -187,6 +180,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
       <div className="flex items-center space-x-2 cursor-pointer text-sm text-muted-foreground">
         <button 
           onClick={() => setShowAdvanced(!showAdvanced)}
+          type="button"
           className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           {showAdvanced ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
