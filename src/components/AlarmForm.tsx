@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { TimePicker } from "./TimePicker";
 import { RecurrenceSelector } from "./RecurrenceSelector";
 import { RecurrencePattern, IntensityCurve } from "@/types/alarm";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { ColorPicker } from "./ColorPicker";
 import { AlarmLengthSelector } from "./AlarmLengthSelector";
 import { IntensityCurveSelector } from "./IntensityCurveSelector";
+import * as consts from "@/consts"
 
 interface AlarmFormProps {
   onSubmit: (data: {
@@ -31,15 +32,15 @@ interface AlarmFormProps {
 }
 
 export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) => {
-  const [name, setName] = useState(initialData?.name || "");
-  const [time, setTime] = useState(initialData?.time || "08:00");
-  const [color, setColor] = useState(initialData?.color || "#4CAF50");
-  const [length, setLength] = useState(initialData?.length || 15);
+  const [name, setName] = useState(initialData?.name || consts.INITIAL_ALARM_NAME);
+  const [time, setTime] = useState(initialData?.time || consts.INITIAL_ALARM_TIME);
+  const [color, setColor] = useState(initialData?.color || consts.INITIAL_ALARM_COLOR);
+  const [length, setLength] = useState(initialData?.length || consts.INITIAL_ALARM_LENGTH);
   const [intensityCurve, setIntensityCurve] = useState<IntensityCurve>(
     initialData?.intensityCurve || {
-      startIntensity: 0,
-      endIntensity: 100,
-      curve: "linear",
+      startIntensity: consts.INITIAL_START_INTENSITY,
+      endIntensity: consts.INITIAL_END_INTENSITY,
+      curve: consts.INITIAL_INTENSITY_TYPE,
     }
   );
   const [recurrence, setRecurrence] = useState<RecurrencePattern>(
@@ -49,28 +50,22 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter an alarm name",
-        variant: "destructive",
+      toast.error("Please enter an alarm name", {
+        duration: consts.TOAST_DURATION,
       });
       return;
     }
 
     if (recurrence.type === "weekly" && (!recurrence.days || recurrence.days.length === 0)) {
-      toast({
-        title: "Error",
-        description: "Please select at least one day for weekly alarm",
-        variant: "destructive",
+      toast.error("Please select at least one day for weekly alarm", {
+        duration: consts.TOAST_DURATION,
       });
       return;
     }
 
     if (recurrence.type === "custom" && (!recurrence.customDates || recurrence.customDates.length === 0)) {
-      toast({
-        title: "Error",
-        description: "Please select at least one date for custom alarm",
-        variant: "destructive",
+      toast.error("Please select at least one date for custom alarm", {
+        duration: consts.TOAST_DURATION,
       });
       return;
     }
@@ -86,7 +81,7 @@ export const AlarmForm: React.FC<AlarmFormProps> = ({ onSubmit, initialData }) =
           id="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Rise and shine"
+          placeholder={consts.ALARM_TOOLTIP}
           className="mt-1"
         />
       </div>

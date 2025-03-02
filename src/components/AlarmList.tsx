@@ -8,9 +8,9 @@ import { format } from "date-fns";
 
 interface AlarmListProps {
   alarms: Alarm[];
-  onToggle: (id: string, isActive: boolean) => void;
+  onToggle: (id: number, isActive: boolean) => void;
   onEdit: (alarm: Alarm) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 const formatRecurrence = (alarm: Alarm) => {

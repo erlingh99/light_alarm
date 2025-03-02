@@ -12,7 +12,7 @@ export type IntensityCurve = {
 };
 
 export type Alarm = {
-  id: string;
+  id: number;
   name: string;
   time: string;
   color: string; // Hex color code

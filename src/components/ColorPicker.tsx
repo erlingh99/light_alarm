@@ -4,22 +4,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { presetColors } from "@/consts"
 
 interface ColorPickerProps {
   value: string;
   onChange: (color: string) => void;
   className?: string;
 }
-
-// Pre-selected color options
-const presetColors = [
-  "#F6E7D2", // Warm white
-  "#FFDC52", // Light yellow 
-  "#ffdba8", // Warmer white
-  "#D946EF", // Magenta Pink
-  "#F97316", // Bright Orange
-  "#0EA5E9", // Ocean Blue
-];
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   value,

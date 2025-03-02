@@ -1,11 +1,12 @@
 
 import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
+import { INITIAL_ALARM_LENGTH, INITIAL_START_INTENSITY, INITIAL_END_INTENSITY, INITIAL_INTENSITY_TYPE} from "@/consts"
 
 // Mock database
 let alarms: Alarm[] = [];
-let deletedAlarms: Record<string, Alarm> = {};
+let deletedAlarm: Alarm | null;
 
-const generateId = () => Math.random().toString(36).substr(2, 9);
+let counter = 0;
 
 export const alarmService = {
   getAlarms: async (): Promise<Alarm[]> => {
@@ -17,15 +18,15 @@ export const alarmService = {
     time: string,
     recurrence: RecurrencePattern,
     color: string,
-    length: number = 15, // Default 15 minutes
+    length: number = INITIAL_ALARM_LENGTH,
     intensityCurve: IntensityCurve = {
-      startIntensity: 0,
-      endIntensity: 100,
-      curve: "linear"
+      startIntensity: INITIAL_START_INTENSITY,
+      endIntensity: INITIAL_END_INTENSITY,
+      curve: INITIAL_INTENSITY_TYPE
     }
   ): Promise<Alarm> => {
     const newAlarm: Alarm = {
-      id: generateId(),
+      id: counter++,
       name,
       time,
       color,
@@ -40,7 +41,7 @@ export const alarmService = {
     return newAlarm;
   },
 
-  updateAlarm: async (id: string, updates: Partial<Alarm>): Promise<Alarm> => {
+  updateAlarm: async (id: number, updates: Partial<Alarm>): Promise<Alarm> => {
     const index = alarms.findIndex((a) => a.id === id);
     if (index === -1) throw new Error("Alarm not found");
     
@@ -52,25 +53,22 @@ export const alarmService = {
     return alarms[index];
   },
 
-  deleteAlarm: async (id: string): Promise<void> => {
+  deleteAlarm: async (id: number): Promise<void> => {
     const alarmToDelete = alarms.find(a => a.id === id);
     if (alarmToDelete) {
       // Store the deleted alarm for potential restoration
-      deletedAlarms[id] = alarmToDelete;
+      deletedAlarm = alarmToDelete;
       
       // Remove from active alarms
       alarms = alarms.filter((a) => a.id !== id);
     }
   },
 
-  restoreAlarm: async (id: string): Promise<Alarm | null> => {
-    const deletedAlarm = deletedAlarms[id];
-    if (deletedAlarm) {
+  restoreAlarm: async (id: number): Promise<Alarm | null> => {
+    
+    if (deletedAlarm?.id === id) {
       // Add back to active alarms
       alarms.push(deletedAlarm);
-      
-      // Remove from deleted alarms
-      delete deletedAlarms[id];
       
       return deletedAlarm;
     }

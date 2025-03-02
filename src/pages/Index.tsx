@@ -9,6 +9,7 @@ import { alarmService } from "@/services/alarmService";
 import { Alarm, IntensityCurve, RecurrencePattern } from "@/types/alarm";
 import { toast } from "sonner";
 import { useTheme } from "next-themes";
+import { TOAST_DURATION, RESTORE_TOAST_DURATION} from "@/consts"
 
 const Index = () => {
   const [editingAlarm, setEditingAlarm] = useState<Alarm | null>(null);
@@ -42,32 +43,32 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
       toast.success("Alarm created successfully", {
-        duration: 3000,
+        duration: TOAST_DURATION,
         className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
       toast.error("Failed to create alarm", {
-        duration: 3000,
+        duration: TOAST_DURATION,
       });
     },
   });
 
   const updateAlarmMutation = useMutation({
-    mutationFn: (data: { id: string; updates: Partial<Alarm> }) =>
+    mutationFn: (data: { id: number; updates: Partial<Alarm> }) =>
       alarmService.updateAlarm(data.id, data.updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       setIsDialogOpen(false);
       setEditingAlarm(null);
       toast.success("Alarm updated successfully", {
-        duration: 3000,
+        duration: TOAST_DURATION,
         className: "bg-sage text-white border-none",
       });
     },
     onError: (error) => {
       toast.error("Failed to update alarm", {
-        duration: 3000,
+        duration: TOAST_DURATION,
       });
     },
   });
@@ -78,7 +79,7 @@ const Index = () => {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       
       toast.success("Alarm deleted successfully", {
-        duration: 5000,
+        duration: RESTORE_TOAST_DURATION,
         className: "bg-sage text-white border-none",
         action: {
           label: "Undo",
@@ -88,7 +89,7 @@ const Index = () => {
     },
     onError: (error) => {
       toast.error("Failed to delete alarm", {
-        duration: 3000,
+        duration: TOAST_DURATION,
       });
     },
   });
@@ -99,14 +100,14 @@ const Index = () => {
       if (restoredAlarm) {
         queryClient.invalidateQueries({ queryKey: ["alarms"] });
         toast.success("Alarm restored successfully", {
-          duration: 3000,
+          duration: TOAST_DURATION,
           className: "bg-sage text-white border-none",
         });
       }
     },
     onError: (error) => {
       toast.error("Failed to restore alarm", {
-        duration: 3000,
+        duration: TOAST_DURATION,
       });
     },
   });
@@ -134,7 +135,7 @@ const Index = () => {
     setIsDialogOpen(true);
   };
 
-  const handleToggle = (id: string, isActive: boolean) => {
+  const handleToggle = (id: number, isActive: boolean) => {
     updateAlarmMutation.mutate({
       id,
       updates: { isActive },
