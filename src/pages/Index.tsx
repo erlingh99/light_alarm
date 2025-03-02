@@ -50,6 +50,7 @@ const Index = () => {
     onError: (error) => {
       toast.error("Failed to create alarm", {
         duration: TOAST_DURATION,
+        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -69,6 +70,7 @@ const Index = () => {
     onError: (error) => {
       toast.error("Failed to update alarm", {
         duration: TOAST_DURATION,
+        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -90,6 +92,7 @@ const Index = () => {
     onError: (error) => {
       toast.error("Failed to delete alarm", {
         duration: TOAST_DURATION,
+        className: "bg-destructive text-white border-none",
       });
     },
   });
@@ -108,6 +111,7 @@ const Index = () => {
     onError: (error) => {
       toast.error("Failed to restore alarm", {
         duration: TOAST_DURATION,
+        className: "bg-destructive text-white border-none",
       });
     },
   });
