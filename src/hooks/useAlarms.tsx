@@ -12,11 +12,13 @@ export function useAlarms() {
   } = useQuery({
     queryKey: ["alarms"],
     queryFn: alarmService.getAlarms,
-    onError: (error: Error) => {
-      console.error("Error fetching alarms:", error);
-      toast.error(`Failed to load alarms: ${error.message}`, {
-        style: { backgroundColor: 'var(--destructive)', color: 'white' }
-      });
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error fetching alarms:", error);
+        toast.error(`Failed to load alarms: ${error.message}`, {
+          style: { backgroundColor: 'var(--destructive)', color: 'white' }
+        });
+      },
     },
   });
 

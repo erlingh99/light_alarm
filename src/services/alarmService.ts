@@ -3,6 +3,9 @@ import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
 import { API_BASE_URL } from "@/config";
 import { INITIAL_ALARM_LENGTH, INITIAL_START_INTENSITY, INITIAL_END_INTENSITY, INITIAL_INTENSITY_TYPE } from "@/consts";
 
+// Store for recently deleted alarms (client-side only)
+const deletedAlarmsStore: Map<number, Alarm> = new Map();
+
 export const alarmService = {
   getAlarms: async (): Promise<Alarm[]> => {
     const response = await fetch(API_BASE_URL);
@@ -66,6 +69,19 @@ export const alarmService = {
   },
 
   deleteAlarm: async (id: number): Promise<void> => {
+    // First, get the alarm to store it before deletion
+    try {
+      const alarmResponse = await fetch(`${API_BASE_URL}/${id}`);
+      if (alarmResponse.ok) {
+        const alarm: Alarm = await alarmResponse.json();
+        // Store the alarm in our client-side store
+        deletedAlarmsStore.set(id, alarm);
+      }
+    } catch (error) {
+      console.error("Error saving alarm before deletion:", error);
+    }
+
+    // Now delete the alarm
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: "DELETE",
     });
@@ -76,20 +92,31 @@ export const alarmService = {
   },
 
   restoreAlarm: async (id: number): Promise<Alarm | null> => {
-    // Since we've moved to a real API, restore would need to be implemented on the backend
-    // For now, we'll create a workaround by sending a PUT request to reactivate a deleted alarm
-    // Assuming the backend has a soft delete mechanism
+    // Get the deleted alarm from our client-side store
+    const deletedAlarm = deletedAlarmsStore.get(id);
+    
+    if (!deletedAlarm) {
+      console.error("Could not find deleted alarm to restore");
+      return null;
+    }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/${id}/restore`, {
-        method: "PUT",
-      });
+      // Create a new alarm with the same properties as the deleted one
+      const { name, time, recurrence, color, length, intensityCurve } = deletedAlarm;
       
-      if (!response.ok) {
-        throw new Error(`Failed to restore alarm: ${response.statusText}`);
-      }
+      const restoredAlarm = await this.createAlarm(
+        name,
+        time,
+        recurrence,
+        color,
+        length,
+        intensityCurve
+      );
       
-      return response.json();
+      // Remove from our deleted store after successful restoration
+      deletedAlarmsStore.delete(id);
+      
+      return restoredAlarm;
     } catch (error) {
       console.error("Error restoring alarm:", error);
       return null;
