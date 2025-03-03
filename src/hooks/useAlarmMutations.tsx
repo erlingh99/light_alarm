@@ -29,11 +29,14 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm created successfully", {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--sage)', color: 'white' }
       });
     },
-    onError: (error) => {
-      toast.error("Failed to create alarm", {
+    onError: (error: Error) => {
+      console.error("Error creating alarm:", error);
+      toast.error(`Failed to create alarm: ${error.message}`, {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--destructive)', color: 'white' }
       });
     },
   });
@@ -45,11 +48,14 @@ export function useAlarmMutations() {
       queryClient.invalidateQueries({ queryKey: ["alarms"] });
       toast.success("Alarm updated successfully", {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--sage)', color: 'white' }
       });
     },
-    onError: (error) => {
-      toast.error("Failed to update alarm", {
+    onError: (error: Error) => {
+      console.error("Error updating alarm:", error);
+      toast.error(`Failed to update alarm: ${error.message}`, {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--destructive)', color: 'white' }
       });
     },
   });
@@ -61,15 +67,18 @@ export function useAlarmMutations() {
       
       toast.success("Alarm deleted successfully", {
         duration: RESTORE_TOAST_DURATION,
+        style: { backgroundColor: 'var(--sage)', color: 'white' },
         action: {
           label: "Undo",
           onClick: () => restoreAlarmMutation.mutate(deletedAlarmId),
         },
       });
     },
-    onError: (error) => {
-      toast.error("Failed to delete alarm", {
+    onError: (error: Error) => {
+      console.error("Error deleting alarm:", error);
+      toast.error(`Failed to delete alarm: ${error.message}`, {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--destructive)', color: 'white' }
       });
     },
   });
@@ -81,12 +90,15 @@ export function useAlarmMutations() {
         queryClient.invalidateQueries({ queryKey: ["alarms"] });
         toast.success("Alarm restored successfully", {
           duration: TOAST_DURATION,
+          style: { backgroundColor: 'var(--sage)', color: 'white' }
         });
       }
     },
-    onError: (error) => {
-      toast.error("Failed to restore alarm", {
+    onError: (error: Error) => {
+      console.error("Error restoring alarm:", error);
+      toast.error(`Failed to restore alarm: ${error.message}`, {
         duration: TOAST_DURATION,
+        style: { backgroundColor: 'var(--destructive)', color: 'white' }
       });
     },
   });

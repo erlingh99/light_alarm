@@ -1,16 +1,15 @@
 
 import { Alarm, RecurrencePattern, IntensityCurve } from "@/types/alarm";
-import { INITIAL_ALARM_LENGTH, INITIAL_START_INTENSITY, INITIAL_END_INTENSITY, INITIAL_INTENSITY_TYPE} from "@/consts"
-
-// Mock database
-const alarms: Alarm[] = [];
-const deletedAlarms: Alarm[] = [];
-
-let counter = 0;
+import { API_BASE_URL } from "@/config";
+import { INITIAL_ALARM_LENGTH, INITIAL_START_INTENSITY, INITIAL_END_INTENSITY, INITIAL_INTENSITY_TYPE } from "@/consts";
 
 export const alarmService = {
   getAlarms: async (): Promise<Alarm[]> => {
-    return alarms;
+    const response = await fetch(API_BASE_URL);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch alarms: ${response.statusText}`);
+    }
+    return response.json();
   },
 
   createAlarm: async (
@@ -25,8 +24,7 @@ export const alarmService = {
       curve: INITIAL_INTENSITY_TYPE
     }
   ): Promise<Alarm> => {
-    const newAlarm: Alarm = {
-      id: counter++,
+    const newAlarm = {
       name,
       time,
       color,
@@ -34,45 +32,67 @@ export const alarmService = {
       intensityCurve,
       isActive: true,
       recurrence,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
     };
-    alarms.push(newAlarm);
-    return newAlarm;
+
+    const response = await fetch(API_BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newAlarm),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to create alarm: ${response.statusText}`);
+    }
+    
+    return response.json();
   },
 
   updateAlarm: async (id: number, updates: Partial<Alarm>): Promise<Alarm> => {
-    const index = alarms.findIndex((a) => a.id === id);
-    if (index === -1) throw new Error("Alarm not found");
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update alarm: ${response.statusText}`);
+    }
     
-    alarms[index] = {
-      ...alarms[index],
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    };
-    return alarms[index];
+    return response.json();
   },
 
   deleteAlarm: async (id: number): Promise<void> => {
-    const idx = alarms.findIndex(a => a.id === id);
-    if (idx > -1) {
-      // Store the deleted alarm for potential restoration
-      deletedAlarms.push(alarms[idx]);
-      
-      // Remove from active alarms
-      alarms.splice(idx, 1);
+    const response = await fetch(`${API_BASE_URL}/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete alarm: ${response.statusText}`);
     }
   },
 
   restoreAlarm: async (id: number): Promise<Alarm | null> => {
-    const idx = deletedAlarms.findIndex(a => a.id === id)
-    if (idx > -1) {
-      // Add back to active alarms
-      const restore = deletedAlarms[idx];
-      alarms.push(restore);
-      deletedAlarms.splice(idx, 1)
-      return restore;
+    // Since we've moved to a real API, restore would need to be implemented on the backend
+    // For now, we'll create a workaround by sending a PUT request to reactivate a deleted alarm
+    // Assuming the backend has a soft delete mechanism
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/${id}/restore`, {
+        method: "PUT",
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to restore alarm: ${response.statusText}`);
+      }
+      
+      return response.json();
+    } catch (error) {
+      console.error("Error restoring alarm:", error);
+      return null;
     }
-    return null;
   }
 };
