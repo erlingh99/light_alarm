@@ -16,8 +16,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
             "bg-destructive",
           success:
             "bg-sage",
-          toast:
-            "group toast group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+          // toast:
+          //   "group toast group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
           description: 
             "group-[.toast]:text-muted-foreground",
           actionButton:

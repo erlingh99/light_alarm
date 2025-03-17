@@ -20,7 +20,7 @@ const formatRecurrence = (alarm: Alarm) => {
     // Use these arrays to map day indices to day names
     const weekDayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
     
-    // Sort days in order from Sunday to Saturday
+    // Sort days in order from Monday to Sunday
     const sortedDays = [...days].sort((a, b) => a - b);
     return `Every ${sortedDays.map(d => weekDayNames[d]).join(", ")}`;
   }

@@ -305,28 +305,6 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
         </Select>
       </div>
       
-      <div className="space-y-2">
-        <Label>Start Intensity: {value.startIntensity}%</Label>
-        <Slider
-          value={[value.startIntensity]}
-          min={0}
-          max={100}
-          step={1}
-          onValueChange={handleStartIntensityChange}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label>End Intensity: {value.endIntensity}%</Label>
-        <Slider
-          value={[value.endIntensity]}
-          min={0}
-          max={100}
-          step={1}
-          onValueChange={handleEndIntensityChange}
-        />
-      </div>
-
       <div className="flex items-center space-x-2 cursor-pointer text-sm text-muted-foreground">
         <button 
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -339,34 +317,54 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
       </div>
 
       {showAdvanced && (
-        <div className="pl-4 pt-2 pb-2 border-l-2 border-muted space-y-3">
-          <div className="space-y-1">
-            <Label className={hyperParam.disabled ? "text-muted-foreground" : ""}>
-              {hyperParam.name} {!hyperParam.disabled && value.hyperParameter !== undefined && `: ${value.hyperParameter.toFixed(0)}`}
-            </Label>
-            <div className="text-xs text-muted-foreground mb-2">{hyperParam.description}</div>
-            
-            {value.curve !== "custom" && (
-              <Slider
-                value={[value.hyperParameter !== undefined ? value.hyperParameter : hyperParam.default]}
-                min={hyperParam.min}
-                max={hyperParam.max}
-                step={hyperParam.step}
-                onValueChange={(values) => handleHyperParameterChange(values[0])}
-                disabled={hyperParam.disabled}
-                className={hyperParam.disabled ? "opacity-50" : ""}
-              />
-            )}
-
-            {value.curve === "custom" && (
-              <div className="text-xs text-muted-foreground mt-1">
-                • Click on the graph to add control points<br />
-                • Drag points to adjust the curve<br />
-                • Double-click a point to remove it
-              </div>
-            )}
-          </div>
+      <div className="pl-4 pt-2 pb-2 border-l-2 border-muted space-y-3">
+        <div className="space-y-2">
+          <Label>Start Intensity: {value.startIntensity}%</Label>
+          <Slider
+            value={[value.startIntensity]}
+            min={0}
+            max={100}
+            step={1}
+            onValueChange={handleStartIntensityChange}
+          />
         </div>
+        <div className="space-y-2">
+          <Label>End Intensity: {value.endIntensity}%</Label>
+          <Slider
+            value={[value.endIntensity]}
+            min={0}
+            max={100}
+            step={1}
+            onValueChange={handleEndIntensityChange}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label className={hyperParam.disabled ? "text-muted-foreground" : ""}>
+            {hyperParam.name} {!hyperParam.disabled && value.hyperParameter !== undefined && `: ${value.hyperParameter.toFixed(0)}`}
+          </Label>
+          <div className="text-xs text-muted-foreground mb-2">{hyperParam.description}</div>
+          
+          {value.curve !== "custom" && (
+            <Slider
+              value={[value.hyperParameter !== undefined ? value.hyperParameter : hyperParam.default]}
+              min={hyperParam.min}
+              max={hyperParam.max}
+              step={hyperParam.step}
+              onValueChange={(values) => handleHyperParameterChange(values[0])}
+              disabled={hyperParam.disabled}
+              className={hyperParam.disabled ? "opacity-50" : ""}
+            />
+          )}
+
+          {value.curve === "custom" && (
+            <div className="text-xs text-muted-foreground mt-1">
+              • Click on the graph to add control points<br />
+              • Drag points to adjust the curve<br />
+              • Double-click a point to remove it
+            </div>
+          )}
+        </div>
+      </div>
       )}
 
       <div className="pt-2">

@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { alarmService } from "@/services/alarmService";
 import { toast } from "sonner";
+import { TOAST_DURATION } from "@/consts";
 
 export function useAlarms() {
   const { 
@@ -16,7 +17,7 @@ export function useAlarms() {
       onError: (error: Error) => {
         console.error("Error fetching alarms:", error);
         toast.error(`Failed to load alarms: ${error.message}`, {
-          style: { backgroundColor: 'var(--destructive)', color: 'white' }
+          duration: TOAST_DURATION,
         });
       },
     },

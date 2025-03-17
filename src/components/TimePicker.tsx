@@ -16,11 +16,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   className,
 }) => {
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    // Ensure the time is in 24-hour format
-    if (/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(newTime)) {
-      onChange(newTime);
-    }
+    onChange(e.target.value);
   };
 
   return (
@@ -29,6 +25,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
       <Input
         type="time"
         id="time"
+        step="300"
         value={value}
         onChange={handleTimeChange}
         className="w-full p-2 rounded-lg border border-input bg-transparent"
