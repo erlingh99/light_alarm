@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/alarms", tags=["alarms"])
 # Initialize alarms from file
 alarms_db = load_alarms()
 
-@router.get("/", response_model=List[Alarm])
+@router.get("", response_model=List[Alarm])
 def get_alarms() -> List[Alarm]:
     return list(alarms_db.values())
 
@@ -29,7 +29,7 @@ def delete_alarm(alarm_id: UUID):
         return {"message": "Alarm deleted successfully"}
     raise HTTPException(status_code=404, detail="Alarm not found")
 
-@router.post("/", response_model=Alarm)
+@router.post("", response_model=Alarm)
 def set_alarm(alarm: Alarm):
     # save the alarm
     alarms_db[alarm.id] = alarm

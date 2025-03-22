@@ -1,1 +1,24 @@
-{}
+{
+  "c711cc6c-bafc-4025-a822-83cef3a56bcb": {
+    "id": "c711cc6c-bafc-4025-a822-83cef3a56bcb",
+    "createdAt": "2025-03-23 00:02:18.809028",
+    "updatedAt": "2025-03-23 00:03:06.663970",
+    "name": "A",
+    "time": "08:00:00",
+    "color": "#4CAF50",
+    "length": 15,
+    "intensityCurve": {
+      "startIntensity": 0,
+      "endIntensity": 100,
+      "curve": "linear",
+      "hyperParameter": null,
+      "controlPoints": null
+    },
+    "isActive": true,
+    "recurrence": {
+      "type": "daily",
+      "days": null,
+      "customDates": null
+    }
+  }
+}
