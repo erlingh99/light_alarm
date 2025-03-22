@@ -13,18 +13,6 @@ from pathlib import Path
 
 app = FastAPI()
 
-origins = [
-    "http://localhost",
-    "http://localhost:8080",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Model for RecurrencePattern
 class RecurrencePattern(BaseModel):
     type: Literal['daily', 'weekly', 'custom'] # daily | weekly | custom

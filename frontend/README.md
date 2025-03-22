@@ -1,69 +1,125 @@
-# Welcome to your Lovable project
+# Alarm Project Frontend
 
-## Project info
+A modern React application for managing alarms with a beautiful UI built using shadcn-ui and Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/0fa3616e-9798-4f61-b191-ff3ac0175c39
+## Features
 
-## How can I edit this code?
+- 🎨 Modern, responsive UI with dark/light mode support
+- ⏰ Create, edit, and manage alarms
+- 🔄 Recurring alarm patterns (daily, weekly, custom)
+- 📈 Customizable intensity curves
+- 🎯 Active/inactive alarm states
+- 🔍 Real-time updates
 
-There are several ways of editing your application.
+## Prerequisites
 
-**Use Lovable**
+- Node.js 18.0.0 or higher
+- npm or bun (recommended)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/0fa3616e-9798-4f61-b191-ff3ac0175c39) and start prompting.
+## Setup
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Install dependencies:
+```bash
+# Using npm
+npm install
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# Or using bun
+bun install
 ```
 
-**Edit a file directly in GitHub**
+2. Create a `.env` file in the root directory:
+```env
+VITE_BACKEND_IP=http://localhost:8000
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Start the development server:
+```bash
+# Using npm
+npm run dev
 
-**Use GitHub Codespaces**
+# Or using bun
+bun run dev
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The application will be available at `http://localhost:5173`
 
-## What technologies are used for this project?
+## Building for Production
 
-This project is built with .
+1. Build the application:
+```bash
+# Using npm
+npm run build
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Or using bun
+bun run build
+```
 
-## How can I deploy this project?
+2. The built files will be in the `dist` directory
 
-Simply open [Lovable](https://lovable.dev/projects/0fa3616e-9798-4f61-b191-ff3ac0175c39) and click on Share -> Publish.
+## Development
 
-## I want to use a custom domain - is that possible?
+### Project Structure
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- `src/`
+  - `components/`: Reusable UI components
+  - `pages/`: Page components
+  - `hooks/`: Custom React hooks
+  - `types/`: TypeScript type definitions
+  - `lib/`: Utility functions and configurations
+  - `App.tsx`: Main application component
+  - `main.tsx`: Application entry point
+
+### Technologies Used
+
+- Vite - Build tool and development server
+- React - UI framework
+- TypeScript - Type safety
+- React Router - Client-side routing
+- shadcn-ui - UI component library
+- Tailwind CSS - Utility-first CSS framework
+- TanStack Query - Data fetching and caching
+- next-themes - Theme management
+
+## Deployment
+
+### Option 1: Static Hosting
+
+1. Build the application:
+```bash
+npm run build
+```
+
+2. Deploy the contents of the `dist` directory to any static hosting service:
+   - Netlify
+   - Vercel
+   - GitHub Pages
+   - AWS S3 + CloudFront
+   - etc.
+
+### Option 2: Docker
+
+1. Build the Docker image:
+```bash
+docker build -t alarm-frontend .
+```
+
+2. Run the container:
+```bash
+docker run -p 80:80 alarm-frontend
+```
+
+## Environment Variables
+
+- `VITE_BACKEND_IP`: Backend API URL (default: http://localhost:8000)
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
