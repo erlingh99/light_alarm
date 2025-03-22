@@ -1,11 +1,15 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from typing import List, Literal
 from datetime import datetime
 from datetime import time as time_t, date as date_t
 from uuid import uuid4, UUID
-from enum import StrEnum
+import json
+import os
+from pathlib import Path
 
 app = FastAPI()
 
@@ -20,8 +24,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
 
 # Model for RecurrencePattern
 class RecurrencePattern(BaseModel):
@@ -59,40 +61,76 @@ class AlarmUpdate(BaseModel):
     isActive: bool | None = None
     recurrence: RecurrencePattern | None = None
 
-# Fake database to store alarms
-fake_db: dict[int, Alarm] = {}
+# File storage setup
+STORAGE_FILE = "alarms.json"
 
-@app.get("/alarms", response_model=List[Alarm])
+def load_alarms() -> dict[UUID, Alarm]:
+    """Load alarms from JSON file."""
+    if not os.path.exists(STORAGE_FILE):
+        return {}
+    
+    with open(STORAGE_FILE, 'r') as f:
+        data = json.load(f)
+        return {UUID(k): Alarm(**v) for k, v in data.items()}
+
+def save_alarms(alarms: dict[UUID, Alarm]) -> None:
+    """Save alarms to JSON file."""
+    with open(STORAGE_FILE, 'w') as f:
+        json.dump(
+            {str(k): v.model_dump(exclude_none=True) for k, v in alarms.items()},
+            f,
+            indent=2,
+            default=str
+        )
+
+# Initialize alarms from file
+alarms_db: dict[UUID, Alarm] = load_alarms()
+
+# Mount static files first, but only for the assets
+app.mount("/assets", StaticFiles(directory="../frontend/dist/assets"), name="assets")
+
+# API Routes
+@app.get("/api/alarms", response_model=List[Alarm])
 def get_alarms() -> List[Alarm]:
-    return list(fake_db.values())
+    return list(alarms_db.values())
 
-@app.get("/alarms/{alarm_id}", response_model=Alarm)
-def get_alarms(alarm_id: UUID):
-    if alarm_id in fake_db:
-        return fake_db[alarm_id]
+@app.get("/api/alarms/{alarm_id}", response_model=Alarm)
+def get_alarm(alarm_id: UUID):
+    if alarm_id in alarms_db:
+        return alarms_db[alarm_id]
     raise HTTPException(status_code=404, detail="Alarm not found")
 
-@app.delete("/alarms/{alarm_id}")
+@app.delete("/api/alarms/{alarm_id}")
 def delete_alarm(alarm_id: UUID):
-    if alarm_id in fake_db:
-        del fake_db[alarm_id]
+    if alarm_id in alarms_db:
+        del alarms_db[alarm_id]
+        save_alarms(alarms_db)
         return {"message": "Alarm deleted successfully"}
     raise HTTPException(status_code=404, detail="Alarm not found")
 
-@app.post("/alarms", response_model=Alarm)
+@app.post("/api/alarms", response_model=Alarm)
 def set_alarm(alarm: Alarm):
     # save the alarm
-    fake_db[alarm.id] = alarm
+    alarms_db[alarm.id] = alarm
+    save_alarms(alarms_db)
     return alarm
 
-@app.put("/alarms/{alarm_id}", response_model=AlarmUpdate)
+@app.put("/api/alarms/{alarm_id}", response_model=Alarm)
 def update_alarm(alarm_id: UUID, partial_alarm: AlarmUpdate):
     # Check if alarm exists (for update case)
-    if alarm_id in fake_db:
-        alarm = fake_db[alarm_id]
+    if alarm_id in alarms_db:
+        alarm = alarms_db[alarm_id]
         update_data = alarm.model_dump() | partial_alarm.model_dump(exclude_unset=True, exclude_none=True)
         updated_alarm = Alarm(**update_data)
         updated_alarm.updatedAt = datetime.now()  # Update timestamp
-        fake_db[updated_alarm.id] = updated_alarm
+        alarms_db[updated_alarm.id] = updated_alarm
+        save_alarms(alarms_db)
         return updated_alarm
-    return HTTPException(status_code=404, detail="Alarm not found")
+    raise HTTPException(status_code=404, detail="Alarm not found")
+
+# Custom handler for non-API routes
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    if not full_path.startswith("api/"):
+        return FileResponse("../frontend/dist/index.html")
+    raise HTTPException(status_code=404, detail="Not found")

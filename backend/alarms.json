@@ -1,0 +1,44 @@
+{
+  "04fddd49-6659-4d14-9aa2-4740efdbba89": {
+    "id": "04fddd49-6659-4d14-9aa2-4740efdbba89",
+    "createdAt": "2025-03-22 23:15:04.981613",
+    "updatedAt": "2025-03-22 23:23:15.536983",
+    "name": "Jobb",
+    "time": "08:00:00",
+    "color": "#ffdba8",
+    "length": 25,
+    "intensityCurve": {
+      "startIntensity": 0,
+      "endIntensity": 100,
+      "curve": "linear"
+    },
+    "isActive": true,
+    "recurrence": {
+      "type": "weekly",
+      "days": [
+        4
+      ]
+    }
+  },
+  "c99a1095-157a-4126-85cb-21f3fbdfbcba": {
+    "id": "c99a1095-157a-4126-85cb-21f3fbdfbcba",
+    "createdAt": "2025-03-22 23:15:24.046128",
+    "updatedAt": "2025-03-22 23:23:16.512118",
+    "name": "B",
+    "time": "08:00:00",
+    "color": "#4CAF50",
+    "length": 15,
+    "intensityCurve": {
+      "startIntensity": 0,
+      "endIntensity": 100,
+      "curve": "linear"
+    },
+    "isActive": true,
+    "recurrence": {
+      "type": "custom",
+      "customDates": [
+        "2025-03-29"
+      ]
+    }
+  }
+}
