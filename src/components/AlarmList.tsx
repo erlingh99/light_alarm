@@ -37,6 +37,10 @@ const formatRecurrence = (alarm: Alarm) => {
   return "Something went wrong";
 };
 
+function formatTime(time: string) {
+  return time.substring(0, 5)
+}
+
 export const AlarmList: React.FC<AlarmListProps> = ({
   alarms,
   onToggle,
@@ -68,7 +72,7 @@ export const AlarmList: React.FC<AlarmListProps> = ({
               <h3 className="font-medium">{alarm.name}</h3>
             </div>
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              <span>{alarm.time}</span>
+              <span>{formatTime(alarm.time)}</span>
               -
               <span>{formatRecurrence(alarm)}</span>
             </div>

@@ -5,7 +5,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { RecurrencePattern } from "@/types/alarm";
-import { addDays } from "date-fns";
 
 interface RecurrenceSelectorProps {
   value: RecurrencePattern;
@@ -27,8 +26,8 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
     
     // Sort dates chronologically
     const sortedDates = [...dates].sort((a, b) => a.getTime() - b.getTime());
-    const newDates = sortedDates.map(date => date.toISOString());
-    
+    sortedDates.forEach(date => date.setHours(-date.getTimezoneOffset()/60)); //to counter isostring locale  
+    const newDates = sortedDates.map(date => date.toISOString())
     onChange({
       ...value,
       customDates: newDates,
@@ -104,7 +103,7 @@ export const RecurrenceSelector: React.FC<RecurrenceSelectorProps> = ({
             mode="multiple"
             selected={selectedDates}
             onSelect={handleDateSelect}
-            disabled={{ before: addDays(new Date(), -1) }}
+            disabled={{ before: new Date() }}
             className="rounded-md border"
           />
         </div>

@@ -37,6 +37,8 @@ export const alarmService = {
       recurrence,
     };
 
+    console.log(newAlarm)
+
     const response = await fetch(API_BASE_URL, {
       method: "POST",
       headers: {
@@ -53,6 +55,7 @@ export const alarmService = {
   },
 
   updateAlarm: async (id: number, updates: Partial<Alarm>): Promise<Alarm> => {
+    console.log(updates)
     const response = await fetch(`${API_BASE_URL}/${id}`, {
       method: "PUT",
       headers: {
@@ -104,7 +107,7 @@ export const alarmService = {
       // Create a new alarm with the same properties as the deleted one
       const { name, time, recurrence, color, length, intensityCurve } = deletedAlarm;
       
-      const restoredAlarm = await this.createAlarm(
+      const restoredAlarm = await alarmService.createAlarm(
         name,
         time,
         recurrence,

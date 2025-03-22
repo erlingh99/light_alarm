@@ -390,7 +390,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
             <path
               d={pathCommand}
               fill="none"
-              stroke="#4CAF50"
+              stroke="#86a489"
               strokeWidth="2"
             />
             
@@ -399,7 +399,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
               cx={padding/2}
               cy={(1 - value.startIntensity / 100) * (svgHeight - padding) + padding/2}
               r="4"
-              fill="#4CAF50"
+              fill="#86a489"
             />
             
             {/* End point */}
@@ -407,7 +407,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
               cx={svgWidth - padding/2}
               cy={(1 - value.endIntensity / 100) * (svgHeight - padding) + padding/2}
               r="4"
-              fill="#4CAF50"
+              fill="#86a489"
             />
 
             {/* Control points for custom curve */}
@@ -417,7 +417,7 @@ export const IntensityCurveSelector: React.FC<IntensityCurveSelectorProps> = ({
                   cx={(point.x / 100) * (svgWidth - padding) + padding/2}
                   cy={(1 - point.y / 100) * (svgHeight - padding) + padding/2}
                   r="5"
-                  fill={activePointIndex === index ? "#2a9134" : "#4CAF50"}
+                  fill={activePointIndex === index ? "#2a9134" : "#86a489"}
                   stroke="#fff"
                   strokeWidth="1.5"
                   className="cursor-move"
