@@ -16,7 +16,7 @@ echo -e "${BLUE}📦 Building frontend...${NC}"
 
 # Build and start Docker containers
 echo -e "${BLUE}🐳 Building and starting Docker containers...${NC}"
-docker compose up -d --build
+sudo docker compose up -d --build
 
 # Wait for the application to be ready
 echo -e "${BLUE}⏳ Waiting for application to be ready...${NC}"
