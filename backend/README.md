@@ -1,11 +1,10 @@
 # Alarm Project Backend
 
-A FastAPI backend service for managing alarms with SQLite storage and file-based persistence.
+A FastAPI backend service for managing alarms with file-based storage.
 
 ## Features
 
 - 🚀 FastAPI for high-performance API endpoints
-- 💾 SQLite database with SQLModel ORM
 - 📝 File-based alarm storage with JSON serialization
 - 🔄 Support for recurring alarm patterns
 - 📈 Customizable intensity curves
@@ -16,6 +15,7 @@ A FastAPI backend service for managing alarms with SQLite storage and file-based
 
 - Python 3.10 or higher
 - UV package installer (recommended) or pip
+- Docker and Docker Compose (for containerized deployment)
 
 ## Setup with UV (Recommended)
 
@@ -97,10 +97,8 @@ backend/
 ### Technologies Used
 
 - FastAPI - Web framework
-- SQLModel - SQL database ORM
 - Pydantic - Data validation
 - UV - Dependency management
-- SQLite - Database
 
 ### Data Models
 
@@ -122,16 +120,27 @@ uv pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-### Option 2: Docker
+### Option 2: Docker Deployment
 
-1. Build the Docker image:
+1. Build and run using Docker Compose (recommended):
 ```bash
-docker build -t alarm-backend .
+# Build and start the container
+docker compose up --build
+
+# Or run in detached mode
+docker compose up -d --build
+
+# Stop the container
+docker compose down
 ```
 
-2. Run the container:
+2. Or build and run using Docker directly:
 ```bash
-docker run -p 8000:8000 alarm-backend
+# Build the image
+docker build -t alarm-backend .
+
+# Run the container
+docker run -p 8000:8000 -v $(pwd)/alarms.json:/app/alarms.json alarm-backend
 ```
 
 ### Production Considerations
@@ -141,6 +150,9 @@ docker run -p 8000:8000 alarm-backend
 3. Implement proper error handling and logging
 4. Consider using environment variables for configuration
 5. Set up proper backup for the `alarms.json` file
+6. Use Docker secrets or environment files for sensitive data
+7. Consider using Docker networks for service isolation
+8. Set up proper monitoring and logging
 
 ## Environment Variables
 
