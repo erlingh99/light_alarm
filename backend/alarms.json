@@ -1,11 +1,11 @@
 {
-  "c711cc6c-bafc-4025-a822-83cef3a56bcb": {
-    "id": "c711cc6c-bafc-4025-a822-83cef3a56bcb",
-    "createdAt": "2025-03-23 00:02:18.809028",
-    "updatedAt": "2025-03-23 00:03:06.663970",
-    "name": "A",
+  "f2a068a9-615a-4c7a-87de-b54d9a8899f8": {
+    "id": "f2a068a9-615a-4c7a-87de-b54d9a8899f8",
+    "createdAt": "2025-03-23 21:23:36.981770",
+    "updatedAt": "2025-03-23 21:23:36.981786",
+    "name": "P\u00e5 tide \u00e5 st\u00e5 opp",
     "time": "08:00:00",
-    "color": "#4CAF50",
+    "color": "#ffdba8",
     "length": 15,
     "intensityCurve": {
       "startIntensity": 0,
