@@ -1,1 +1,52 @@
-{}
+{
+  "2d39b949-47fd-4744-a300-d7e7cfe52f4a": {
+    "id": "2d39b949-47fd-4744-a300-d7e7cfe52f4a",
+    "createdAt": "2025-03-24 06:25:53.518562",
+    "updatedAt": "2025-03-24 06:25:53.518581",
+    "name": "Test",
+    "time": "08:00:00",
+    "color": "#4CAF50",
+    "length": 15,
+    "intensityCurve": {
+      "startIntensity": 0,
+      "endIntensity": 100,
+      "curve": "linear",
+      "hyperParameter": null,
+      "controlPoints": null
+    },
+    "isActive": true,
+    "recurrence": {
+      "type": "weekly",
+      "days": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "customDates": null
+    }
+  },
+  "21e82336-3dd4-4f5e-980c-f2dca747cc20": {
+    "id": "21e82336-3dd4-4f5e-980c-f2dca747cc20",
+    "createdAt": "2025-03-24 17:25:43.639970",
+    "updatedAt": "2025-03-24 17:25:43.639996",
+    "name": "Rise and Shine",
+    "time": "08:00:00",
+    "color": "#ffdba8",
+    "length": 24,
+    "intensityCurve": {
+      "startIntensity": 0,
+      "endIntensity": 100,
+      "curve": "s-curve",
+      "hyperParameter": 10,
+      "controlPoints": null
+    },
+    "isActive": true,
+    "recurrence": {
+      "type": "daily",
+      "days": null,
+      "customDates": null
+    }
+  }
+}

@@ -13,7 +13,7 @@ class IntensityCurve(BaseModel):
     endIntensity: int # 0-100
     curve: Literal['linear', 'asymptotic', 's-curve', 'custom']
     hyperParameter: int | None = None  # Curve-specific parameter
-    controlPoints: List[dict[float, float]] | None = None  # Custom curve control points
+    controlPoints: List[dict[str, float]] | None = None  # Custom curve control points
 
 class Alarm(BaseModel):
     id: UUID = Field(default_factory=uuid4)

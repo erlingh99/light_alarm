@@ -25,7 +25,7 @@ sleep 10
 status=0
 
 # Check if the application is running
-if curl -s http://alarm.lan/ > /dev/null; then
+if curl -s http://localhost/ > /dev/null; then
     echo -e "${GREEN}✅ Application is running successfully!${NC}"
     echo -e "${GREEN}🌐 Access the application at: http://alarm.lan/${NC}"
 else

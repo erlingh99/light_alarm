@@ -12,6 +12,11 @@ app.mount("/assets", StaticFiles(directory="./frontend/dist/assets"), name="asse
 # Include API routers
 app.include_router(api.router)
 
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def serveIcon():
+    return FileResponse("./frontend/dist/favicon.ico")
+
 # Catch-all route for SPA - must be last
 @app.get("/{full_path:path}", include_in_schema=False)
 async def catch_all(full_path: str):
