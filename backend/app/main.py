@@ -19,7 +19,7 @@ async def serveIcon():
 
 @app.get("/site.webmanifest", include_in_schema=False)
 async def serveManifest():
-    return FileResponse("./frontend/dist/serve.webmanifest")
+    return FileResponse("./frontend/dist/site.webmanifest")
 
 @app.get("/apple-touch-icon.png", include_in_schema=False)
 async def serveAppleIcon():
