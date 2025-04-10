@@ -2,14 +2,10 @@ package alarm
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"alarm_project/embedded/src/config"
-	"alarm_project/embedded/src/hardware"
-)
-
-var (
-	ErrNoActiveAlarms = errors.New("no active alarms found")
 )
 
 // FindNextAlarm returns the next alarm to trigger, its time until trigger, and any error
@@ -23,8 +19,9 @@ func FindNextAlarm(alarms []Alarm) (Alarm, time.Duration, error) {
 			continue
 		}
 
-		timeUntil, valid := timeUntilNextTrigger(alarm)
-		if !valid {
+		timeUntil, err := timeUntilNextTrigger(alarm)
+		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 
@@ -36,128 +33,107 @@ func FindNextAlarm(alarms []Alarm) (Alarm, time.Duration, error) {
 	}
 
 	if !found {
-		return Alarm{}, 0, ErrNoActiveAlarms
+		return Alarm{}, 0, errors.New("no active alarms found")
 	}
 
 	return nextAlarm, nextTime, nil
 }
 
 // Calculate time until next alarm trigger
-func timeUntilNextTrigger(alarm Alarm) (time.Duration, bool) {
-	// Parse the alarm time (format: "HH:MM")
-	targetTime, err := time.Parse("15:04", alarm.Time)
+func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
+	// Parse the alarm time (format: "hh:mm:ss")
+	targetTime, err := time.Parse("15:04:05", alarm.Time)
 	if err != nil {
-		return 0, false
+		return 0, err
 	}
 
 	now := time.Now()
 	
-	// Create target time for today
-	target := time.Date(
-		now.Year(),
-		now.Month(),
-		now.Day(),
-		targetTime.Hour(),
-		targetTime.Minute(),
-		0, 0, time.Local,
-	)
-
-	// Handle different recurrence types
 	switch alarm.Recurrence.Type {
 	case "daily":
-		// If the time has already passed today, schedule for tomorrow
+		target := time.Date(
+			now.Year(),
+			now.Month(),
+			now.Day(),
+			targetTime.Hour(),
+			targetTime.Minute(),
+			0, 0, time.Local,
+		).Add(-time.Duration(alarm.Length)*time.Minute)
+
 		if target.Before(now) {
-			target = target.Add(24 * time.Hour)
+			target.Add(time.Hour*24)
 		}
-		return target.Sub(now), true
+		return target.Sub(now), nil
 
 	case "weekly":
-		// If no days specified, treat as daily
 		if len(alarm.Recurrence.Days) == 0 {
-			if target.Before(now) {
-				target = target.Add(24 * time.Hour)
-			}
-			return target.Sub(now), true
+			return 0, errors.New("Alarm type weekly, but no days specified")
 		}
 
-		// Find the next occurrence in the specified days
-		currentWeekday := int(now.Weekday())
-		nextDay := -1
+		currentWeekday := int(now.Weekday()) - 1 //Monday is 0 not 1
+		var next_alarm time.Duration
+		found := false
 
-		// Find the next day in the week
 		for _, day := range alarm.Recurrence.Days {
-			if day > currentWeekday {
-				if nextDay == -1 || day < nextDay {
-					nextDay = day
-				}
+			days_to_alarm := day - currentWeekday
+			target := time.Date(
+				now.Year(),
+				now.Month(),
+				now.Day(),
+				targetTime.Hour(),
+				targetTime.Minute(),
+				0, 0, time.Local,
+			).Add(-time.Duration(alarm.Length)*time.Minute + time.Duration(days_to_alarm)*time.Hour*24)
+
+			if target.Before(now) {
+				target.Add(time.Hour*24*7)
+			}
+
+			if time_to_alarm := target.Sub(now); !found || time_to_alarm < next_alarm {
+				next_alarm = time_to_alarm
 			}
 		}
 
-		// If no day found in current week, use the first day of next week
-		if nextDay == -1 {
-			nextDay = alarm.Recurrence.Days[0]
+		if !found {
+			return 0, errors.New("No alarm coming alaram found, type weekly")
 		}
+		return next_alarm, nil
 
-		// Calculate days until next occurrence
-		daysUntil := nextDay - currentWeekday
-		if daysUntil <= 0 {
-			daysUntil += 7
+	case "custom":
+		var closestAlarm time.Duration
+		found := false
+		for _, day := range alarm.Recurrence.CustomDates { //assume not sorted
+			target := time.Date(
+				day.Year(),
+				day.Month(),
+				day.Day(),
+				targetTime.Hour(),
+				targetTime.Minute(),
+				0, 0, time.Local,
+			).Add(-time.Duration(alarm.Length)*time.Minute)
+
+			if time_to_alarm := target.Sub(now); time_to_alarm > 0 && (!found || time_to_alarm < closestAlarm) {
+				closestAlarm = time_to_alarm
+				found = true
+			}
 		}
-
-		// Set target to the next occurrence
-		target = target.Add(time.Duration(daysUntil) * 24 * time.Hour)
-		return target.Sub(now), true
-
-	case "once":
-		// For one-time alarms, check if the time has already passed
-		if target.Before(now) {
-			return 0, false
+		
+		if !found {
+			return 0, errors.New("All alarms already elapsed, type custom")
 		}
-		return target.Sub(now), true
+		return closestAlarm, nil
 
 	default:
-		// Unknown recurrence type
-		return 0, false
+		return 0, errors.New("Unknown recurrence type: " + alarm.Recurrence.Type)
 	}
 }
 
 // RunAlarm executes the alarm sequence
-func RunAlarm(alarm Alarm) {
+func RunAlarm(alarm Alarm, done chan<- bool) {
 	println("Alarm triggered:", alarm.Name)
-	
-	// Ramp up intensity
-	for i := alarm.IntensityCurve.StartIntensity; i <= alarm.IntensityCurve.EndIntensity; i += config.INTENSITY_STEP {
-		hardware.ControlLED(i)
-		hardware.ControlBuzzer(440, i) // A4 note (440Hz) with current intensity
-		time.Sleep(config.INTENSITY_STEP_TIME)
-		
-		// Check for button press to stop alarm
-		if hardware.IsButtonPressed() {
-			stopAlarm()
-			return
-		}
-	}
-
-	// Hold at full intensity
-	time.Sleep(config.ALARM_HOLD_TIME)
-
-	// Ramp down intensity
-	for i := alarm.IntensityCurve.EndIntensity; i >= alarm.IntensityCurve.StartIntensity; i -= config.INTENSITY_STEP {
-		hardware.ControlLED(i)
-		hardware.ControlBuzzer(440, i) // A4 note (440Hz) with current intensity
-		time.Sleep(config.INTENSITY_STEP_TIME)
-		
-		// Check for button press to stop alarm
-		if hardware.IsButtonPressed() {
-			stopAlarm()
-			return
-		}
-	}
+	config.LED_PIN.Set(true)
+	time.Sleep(time.Minute*time.Duration(alarm.Length))
+	config.LED_PIN.Set(false)
+	done <- true
 }
 
-// stopAlarm turns off the LED and buzzer
-func stopAlarm() {
-	hardware.ControlLED(0)
-	hardware.ControlBuzzer(440, 0) // A4 note (440Hz) with 0 intensity
-	println("Alarm stopped by button press")
-} 

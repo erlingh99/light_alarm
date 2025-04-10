@@ -17,7 +17,7 @@ func FetchAlarms() ([]alarm.Alarm, error) {
 	}
 
 	// Create request
-	req, err := http.NewRequest("GET", config.SERVER_URL, nil)
+	req, err := http.NewRequest("GET", config.API_URL, nil)
 	if err != nil {
 		return nil, err
 	}

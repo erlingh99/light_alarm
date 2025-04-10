@@ -3,36 +3,18 @@ package main
 import (
 	"time"
 	
-	"alarm_project/embedded/src/machine" //"machine"
 	"alarm_project/embedded/src/alarm"
 	"alarm_project/embedded/src/config"
 	"alarm_project/embedded/src/hardware"
 	"alarm_project/embedded/src/http"
 )
 
-// Initialize hardware
-func init() {
-	// Initialize LED
-	hardware.InitLED()
 
-	// Initialize buzzer
-	hardware.InitBuzzer()
-
-	// Initialize button
-	hardware.InitButton()
-
-	// Initialize serial for debugging
-	machine.Serial.Configure(machine.UARTConfig{
-		BaudRate: 115200,
-	})
-}
-
-// Main loop
 func main() {
-	println("Starting ESP32 Alarm Controller...")
+	println("Starting Alarm Controller...")
 
 	// Create timer for alarm fetching
-	fetchTimer := time.NewTimer(config.FETCH_INTERVAL)
+	fetchTimer := time.NewTimer(time.Second) // Small initial value to fetch immediately
 	defer fetchTimer.Stop()
 
 	// Create timer for next alarm
@@ -40,56 +22,49 @@ func main() {
 	alarmTimer.Stop()
 	defer alarmTimer.Stop()
 
-	var alarms []alarm.Alarm
 	var nextAlarm alarm.Alarm
+	var alarmRunning bool = false
 
-	// Initial alarm fetch
-	alarms, err := http.FetchAlarms()
-	if err != nil {
-		println("Error fetching alarms:", err.Error())
-	}
+	done := make(chan bool)
+	buttonPress := make(chan bool)
+
+	hardware.InitLED()
+	hardware.InitBuzzer()
+	hardware.InitButton(buttonPress)
 
 	for {
 		select {
 		case <-fetchTimer.C:
-			// Fetch new alarms
-			alarms, err = http.FetchAlarms()
+			alarms, err := http.FetchAlarms()
 			if err != nil {
 				println("Error fetching alarms:", err.Error())
+				fetchTimer.Reset(config.FETCH_INTERVAL)
 				continue
 			}
 
-			// Find next alarm
 			var nextAlarmTime time.Duration
 			nextAlarm, nextAlarmTime, err = alarm.FindNextAlarm(alarms)
 			if err != nil {
 				println("No active alarms found")
-				nextAlarmTime = config.FETCH_INTERVAL
+			} else {
+				alarmTimer.Reset(nextAlarmTime)
 			}
-
-			// Reset fetch timer
 			fetchTimer.Reset(config.FETCH_INTERVAL)
 
-			// Set alarm timer if we found a valid next alarm
-			if nextAlarmTime < config.FETCH_INTERVAL {
-				alarmTimer.Reset(nextAlarmTime)
-			}
-
 		case <-alarmTimer.C:
-			// Start alarm sequence in a new goroutine
-			go alarm.RunAlarm(nextAlarm)
+			go alarm.RunAlarm(nextAlarm, done) // Start alarm sequence. Reports done via channel
+			fetchTimer.Stop() //stop fetching until alarm is finished
+			alarmRunning = true
 
-			// Find next alarm
-			var nextAlarmTime time.Duration
-			nextAlarm, nextAlarmTime, err = alarm.FindNextAlarm(alarms)
-			if err != nil {
-				println("No active alarms found")
-				nextAlarmTime = config.FETCH_INTERVAL
-			}
+		case <-done: //alarm finished, 
+			fetchTimer.Reset(time.Second) //fetch immediately
+			alarmRunning = false
 
-			// Set next alarm timer if we found a valid next alarm
-			if nextAlarmTime < config.FETCH_INTERVAL {
-				alarmTimer.Reset(nextAlarmTime)
+		case <-buttonPress:
+
+			if alarmRunning {
+				alarmRunning = false
+				done <- true //stop running alarm BIG ISSUE HERE done is read by main thread AND coroutine
 			}
 		}
 	}
