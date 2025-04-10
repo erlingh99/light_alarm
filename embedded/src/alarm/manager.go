@@ -2,13 +2,18 @@ package alarm
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"alarm_project/embedded/src/config"
 )
 
-// FindNextAlarm returns the next alarm to trigger, its time until trigger, and any error
+var (
+	ErrorNoAlarms = errors.New("No coming alarms found")
+	ErrorWeeklyBad = errors.New("Alarm type weekly, but no days specified")
+	ErrorWeeklyNotFound = errors.New("No coming alarm found, type weekly")
+	ErrorCustomNotFound = errors.New("All alarms already elapsed, type custom")
+)
+
 func FindNextAlarm(alarms []Alarm) (Alarm, time.Duration, error) {
 	var nextAlarm Alarm
 	var nextTime time.Duration
@@ -21,7 +26,7 @@ func FindNextAlarm(alarms []Alarm) (Alarm, time.Duration, error) {
 
 		timeUntil, err := timeUntilNextTrigger(alarm)
 		if err != nil {
-			fmt.Println(err)
+			println(err)
 			continue
 		}
 
@@ -33,13 +38,12 @@ func FindNextAlarm(alarms []Alarm) (Alarm, time.Duration, error) {
 	}
 
 	if !found {
-		return Alarm{}, 0, errors.New("no active alarms found")
+		return Alarm{}, 0, ErrorNoAlarms
 	}
 
 	return nextAlarm, nextTime, nil
 }
 
-// Calculate time until next alarm trigger
 func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
 	// Parse the alarm time (format: "hh:mm:ss")
 	targetTime, err := time.Parse("15:04:05", alarm.Time)
@@ -61,13 +65,13 @@ func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
 		).Add(-time.Duration(alarm.Length)*time.Minute)
 
 		if target.Before(now) {
-			target.Add(time.Hour*24)
+			target = target.Add(time.Hour*24)
 		}
 		return target.Sub(now), nil
 
 	case "weekly":
 		if len(alarm.Recurrence.Days) == 0 {
-			return 0, errors.New("Alarm type weekly, but no days specified")
+			return 0, ErrorWeeklyBad
 		}
 
 		currentWeekday := int(now.Weekday()) - 1 //Monday is 0 not 1
@@ -86,16 +90,17 @@ func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
 			).Add(-time.Duration(alarm.Length)*time.Minute + time.Duration(days_to_alarm)*time.Hour*24)
 
 			if target.Before(now) {
-				target.Add(time.Hour*24*7)
+				target = target.Add(time.Hour*24*7)
 			}
 
 			if time_to_alarm := target.Sub(now); !found || time_to_alarm < next_alarm {
 				next_alarm = time_to_alarm
+				found = true
 			}
 		}
 
 		if !found {
-			return 0, errors.New("No alarm coming alaram found, type weekly")
+			return 0, ErrorWeeklyNotFound
 		}
 		return next_alarm, nil
 
@@ -119,7 +124,7 @@ func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
 		}
 		
 		if !found {
-			return 0, errors.New("All alarms already elapsed, type custom")
+			return 0, ErrorCustomNotFound
 		}
 		return closestAlarm, nil
 
@@ -128,7 +133,6 @@ func timeUntilNextTrigger(alarm Alarm) (time.Duration, error) {
 	}
 }
 
-// RunAlarm executes the alarm sequence
 func RunAlarm(alarm Alarm, done chan<- bool) {
 	println("Alarm triggered:", alarm.Name)
 	config.LED_PIN.Set(true)

@@ -45,7 +45,7 @@ func main() {
 			var nextAlarmTime time.Duration
 			nextAlarm, nextAlarmTime, err = alarm.FindNextAlarm(alarms)
 			if err != nil {
-				println("No active alarms found")
+				println(err)
 			} else {
 				alarmTimer.Reset(nextAlarmTime)
 			}

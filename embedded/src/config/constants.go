@@ -21,9 +21,5 @@ const (
 const (
 	FETCH_INTERVAL     		= 5 * time.Minute
 	BUTTON_DEBOUNCE_TIME 	= 50 * time.Millisecond
-)
-
-// HTTP configuration
-const (
-	HTTP_TIMEOUT = 10 * time.Second
+	HTTP_TIMEOUT 			= 10 * time.Second
 ) 
