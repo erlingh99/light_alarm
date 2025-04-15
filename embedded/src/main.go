@@ -1,17 +1,18 @@
 package main
 
 import (
+	"context"
 	"time"
 	
 	"alarm_project/embedded/src/alarm"
 	"alarm_project/embedded/src/config"
 	"alarm_project/embedded/src/hardware"
 	"alarm_project/embedded/src/http"
+	"alarm_project/embedded/src/log"
 )
 
-
 func main() {
-	println("Starting Alarm Controller...")
+	log.Info("Starting Alarm Controller...")
 
 	// Create timer for alarm fetching
 	fetchTimer := time.NewTimer(time.Second) // Small initial value to fetch immediately
@@ -24,12 +25,9 @@ func main() {
 
 	var nextAlarm alarm.Alarm
 	var alarmRunning bool = false
-
-	done := make(chan bool)
+	var cancelAlarm context.CancelFunc
 	buttonPress := make(chan bool)
 
-	hardware.InitLED()
-	hardware.InitBuzzer()
 	hardware.InitButton(buttonPress)
 
 	for {
@@ -37,7 +35,7 @@ func main() {
 		case <-fetchTimer.C:
 			alarms, err := http.FetchAlarms()
 			if err != nil {
-				println("Error fetching alarms:", err.Error())
+				log.Error("Error fetching alarms: %v", err)
 				fetchTimer.Reset(config.FETCH_INTERVAL)
 				continue
 			}
@@ -45,27 +43,36 @@ func main() {
 			var nextAlarmTime time.Duration
 			nextAlarm, nextAlarmTime, err = alarm.FindNextAlarm(alarms)
 			if err != nil {
-				println(err)
+				log.Warn("No alarms found: %v", err)
 			} else {
-				alarmTimer.Reset(nextAlarmTime)
+				log.Info("Next alarm '%s' scheduled in %v", nextAlarm.Name, nextAlarmTime)
+				alarmTimer.Reset(nextAlarmTime) 
 			}
 			fetchTimer.Reset(config.FETCH_INTERVAL)
 
 		case <-alarmTimer.C:
-			go alarm.RunAlarm(nextAlarm, done) // Start alarm sequence. Reports done via channel
-			fetchTimer.Stop() //stop fetching until alarm is finished
+			var ctx context.Context
+			ctx, cancelAlarm = context.WithCancel(context.Background())
 			alarmRunning = true
-
-		case <-done: //alarm finished, 
-			fetchTimer.Reset(time.Second) //fetch immediately
-			alarmRunning = false
+			fetchTimer.Stop()
+			
+			go func() {
+				defer cancelAlarm()
+				manager := alarm.NewAlarmManager(nextAlarm)
+				manager.Run(ctx)
+				alarmRunning = false
+				fetchTimer.Reset(time.Second)
+			}()
 
 		case <-buttonPress:
-
 			if alarmRunning {
+				log.Info("Alarm cancelled by user")
+				cancelAlarm()
 				alarmRunning = false
-				done <- true //stop running alarm BIG ISSUE HERE done is read by main thread AND coroutine
+				fetchTimer.Reset(time.Second)
+			} else {
+				log.Debug("Next alarm: %s at %s (%s)", nextAlarm.Name, nextAlarm.Time, nextAlarm.Recurrence.Type)
 			}
 		}
 	}
-} 
+}
