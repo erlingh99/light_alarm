@@ -9,10 +9,26 @@ import (
 	"alarm_project/embedded/src/hardware"
 	"alarm_project/embedded/src/http"
 	"alarm_project/embedded/src/log"
+
+	"tinygo.org/x/tinywifi"
 )
 
 func main() {
 	log.Info("Starting Alarm Controller...")
+
+	// Initialize WiFi
+	adaptor := &tinywifi.Adaptor{
+		SSID: config.WIFI_SSID,
+		Password: config.WIFI_PASS,
+	}
+
+	log.Info("Connecting to WiFi network: %s", config.WIFI_SSID)
+	err := adaptor.Connect()
+	if err != nil {
+		log.Error("Failed to connect to WiFi: %v", err)
+		return
+	}
+	log.Info("WiFi connected successfully")
 
 	// Create timer for alarm fetching
 	fetchTimer := time.NewTimer(time.Second) // Small initial value to fetch immediately

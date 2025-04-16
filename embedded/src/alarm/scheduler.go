@@ -5,7 +5,7 @@ import (
 	"alarm_project/embedded/src/log"
 )
 
-// calculateTarget creates a time.Time for a given alarm time
+// calculateTarget creates a time.Time which is the time to trigger the alarm sequence for a given alarm time
 func calculateTarget(now time.Time, alarm Alarm) (time.Time, error) {
 	targetTime, err := time.Parse("15:04:05", alarm.Time)
 	if err != nil {

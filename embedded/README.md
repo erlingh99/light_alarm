@@ -1,18 +1,21 @@
-# ESP32 Alarm Controller
+# Raspberry Pi Pico W Alarm Controller
 
-This is the embedded component of the alarm project, running on an ESP32 microcontroller. It fetches alarms from the server and controls an LED and buzzer based on the alarm settings.
+This is the embedded component of the alarm project, running on a Raspberry Pi Pico W microcontroller. It fetches alarms from the server and controls an LED and buzzer based on the alarm settings.
 
 ## Hardware Requirements
 
-- ESP32 development board (e.g., ESP32-DevKitC)
-- LED (built-in or external)
-- Buzzer
+- Raspberry Pi Pico W
+- PWM-capable LED or LED strip
+- Piezo buzzer (optional)
+- Push button for alarm control
 - USB cable for programming
+- Micro USB power supply
 
 ## Pin Configuration
 
-- LED: GPIO2 (built-in LED on most ESP32 boards)
-- Buzzer: GPIO4 (PWM capable pin)
+- LED: GPIO25 (built-in LED on Pico)
+- Buzzer: GPIO16 (PWM capable pin)
+- Button: GPIO15 (with internal pull-up)
 
 ## Setup
 
@@ -22,66 +25,104 @@ This is the embedded component of the alarm project, running on an ESP32 microco
    sudo dpkg -i tinygo_0.27.0_amd64.deb
    ```
 
-2. Install ESP32 toolchain:
-   ```bash
-   sudo apt-get install gcc-riscv64-unknown-elf
+2. Configure WiFi:
+   Create `src/config/wifi_config.go` with your credentials:
+   ```go
+   package config
+
+   const (
+       WIFI_SSID = "your_ssid"
+       WIFI_PASS = "your_password"
+   )
    ```
 
 3. Build the project:
    ```bash
-   tinygo build -o firmware.bin -target=esp32 ./src/main.go
+   tinygo build -o firmware.uf2 -target=pico ./src/main.go
    ```
 
-4. Flash to ESP32:
-   ```bash
-   esptool.py --port /dev/ttyUSB0 write_flash 0x10000 firmware.bin
-   ```
+4. Flash to Pico W:
+   1. Hold the BOOTSEL button while connecting the Pico to your computer
+   2. It will appear as a USB mass storage device
+   3. Copy the firmware.uf2 file to the Pico
+   4. The Pico will automatically reboot and run the firmware
 
 ## Features
 
-- Fetches alarms from the server
-- Controls LED intensity based on alarm settings
-- Controls buzzer for alarm sound
-- Supports different intensity curves
-- Handles alarm recurrence patterns
-- Serial debugging output
-
-## TODO
-
-- [ ] Implement HTTP client for alarm fetching
-- [ ] Implement proper PWM control for LED
-- [ ] Add WiFi configuration
-- [ ] Add error handling for network issues
-- [ ] Implement proper time synchronization
-- [ ] Add configuration for LED and buzzer pins
+- 🔄 Automatic alarm fetching from server over WiFi
+- 💡 LED intensity control with 4 curve types:
+  - Linear: Direct progression
+  - S-curve: Smooth transition with configurable sharpness
+  - Asymptotic: Gradual approach with configurable decay
+  - Custom: Catmull-Rom spline interpolation
+- 🔔 Wake-up melody with PWM frequency control
+- ⏰ Precise alarm scheduling
+- 🔲 Button control for alarm cancellation
+- 📝 Detailed logging system
 
 ## Development
 
-The project uses TinyGo, which is a Go compiler for small places. The main code is in `src/main.go`.
+### Project Structure
 
-To modify the code:
+```
+src/
+├── main.go              # Main application loop
+├── alarm/
+│   ├── types.go        # Data structures
+│   ├── scheduler.go     # Alarm timing logic
+│   ├── intensity.go     # LED curve calculations
+│   ├── manager.go       # Alarm execution
+│   └── errors.go       # Error definitions
+├── hardware/
+│   ├── led.go          # LED PWM control
+│   ├── buzzer.go       # Sound generation
+│   └── button.go       # Input handling
+├── http/
+│   └── client.go       # Server communication
+├── config/
+│   └── constants.go    # Configuration
+└── log/
+    └── log.go          # Logging system
+```
 
-1. Edit `src/main.go`
-2. Build using `tinygo build`
-3. Flash to the device
-4. Monitor output using:
-   ```bash
-   screen /dev/ttyUSB0 115200
-   ```
+### Intensity Curve Implementation
+
+All curve calculations are implemented in `alarm/intensity.go`:
+
+- **Linear**: Simple linear interpolation
+- **S-curve**: Customized logistic function with variable steepness
+- **Asymptotic**: Exponential approach with configurable rate
+- **Custom**: Catmull-Rom spline for smooth interpolation
+
+### Alarm Execution Flow
+
+1. Connect to WiFi network
+2. Fetch alarms from server periodically
+3. Calculate next alarm trigger time
+4. Wait for alarm time
+5. Execute intensity curve over alarm duration
+6. Activate buzzer wake-up tune
+7. Monitor button for cancellation
 
 ## Troubleshooting
 
-1. If the device is not recognized:
-   - Check USB connection
-   - Verify USB permissions: `sudo usermod -a -G dialout $USER`
+1. If the Pico is not recognized:
+   - Make sure to hold BOOTSEL while connecting
    - Try a different USB cable
+   - Check USB port functionality
 
 2. If flashing fails:
-   - Put the ESP32 in bootloader mode (hold BOOT button while pressing RESET)
-   - Verify the correct port is being used
-   - Check if the firmware file exists and is valid
+   - Verify the firmware.uf2 file exists
+   - Make sure the Pico appears as a USB drive
+   - Try re-entering bootloader mode
 
-3. If the LED/buzzer doesn't work:
+3. If LED/buzzer doesn't work:
    - Verify pin connections
-   - Check if the pins are correctly configured in the code
-   - Test with a simple blink program first 
+   - Check PWM configuration
+   - Test with blink example first
+
+4. If WiFi doesn't connect:
+   - Verify credentials in wifi_config.go
+   - Check signal strength
+   - Monitor serial output for connection status
+   - Make sure you're using a Pico W (not a regular Pico)

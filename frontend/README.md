@@ -7,7 +7,11 @@ A modern React application for managing alarms with a beautiful UI built using s
 - 🎨 Modern, responsive UI with dark/light mode support
 - ⏰ Create, edit, and manage alarms
 - 🔄 Recurring alarm patterns (daily, weekly, custom)
-- 📈 Customizable intensity curves
+- 📈 Customizable intensity curves:
+  - Linear progression
+  - S-curve transition
+  - Asymptotic approach
+  - Custom curves with control points
 - 🎯 Active/inactive alarm states
 - 🔍 Real-time updates
 
@@ -27,12 +31,7 @@ npm install
 bun install
 ```
 
-2. Create a `.env` file in the root directory:
-```env
-VITE_BACKEND_IP=http://localhost:8000
-```
-
-3. Start the development server:
+2. Start the development server:
 ```bash
 # Using npm
 npm run dev
@@ -69,57 +68,33 @@ bun run build
   - `App.tsx`: Main application component
   - `main.tsx`: Application entry point
 
+### Component Documentation
+
+#### IntensityCurveSelector
+
+The intensity curve selector allows users to define how the light intensity changes over time:
+
+- **Linear**: Simple linear progression from start to end intensity
+- **S-curve**: Smooth transition with adjustable sharpness
+- **Asymptotic**: Gradual approach to target with adjustable decay rate
+- **Custom**: User-defined curve using control points
+
+Parameters:
+- Start Intensity (0-100%)
+- End Intensity (0-100%)
+- Curve Type
+- Curve-specific parameters:
+  - S-curve: Sharpness (1-50)
+  - Asymptotic: Decay Rate (-50 to 50)
+  - Custom: Control points (x: 0-100, y: 0-100)
+
 ### Technologies Used
 
-- Vite - Build tool and development server
-- React - UI framework
-- TypeScript - Type safety
-- React Router - Client-side routing
-- shadcn-ui - UI component library
-- Tailwind CSS - Utility-first CSS framework
-- TanStack Query - Data fetching and caching
-- next-themes - Theme management
-
-## Deployment
-
-### Option 1: Static Hosting
-
-1. Build the application:
-```bash
-npm run build
-```
-
-2. Deploy the contents of the `dist` directory to any static hosting service:
-   - Netlify
-   - Vercel
-   - GitHub Pages
-   - AWS S3 + CloudFront
-   - etc.
-
-### Option 2: Docker
-
-1. Build the Docker image:
-```bash
-docker build -t alarm-frontend .
-```
-
-2. Run the container:
-```bash
-docker run -p 80:80 alarm-frontend
-```
-
-## Environment Variables
-
-- `VITE_BACKEND_IP`: Backend API URL (default: http://localhost:8000)
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **Build**: Vite
+- **Framework**: React
+- **Type Safety**: TypeScript
+- **Routing**: React Router
+- **UI Components**: shadcn-ui
+- **Styling**: Tailwind CSS
+- **Data Management**: TanStack Query
+- **Theme Management**: next-themes

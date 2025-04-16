@@ -24,44 +24,89 @@ func calculateLinearIntensity(curve IntensityCurve, progress float64) int {
 }
 
 func calculateAsymptoticIntensity(curve IntensityCurve, progress float64) int {
-	speed := 2.0
+	param := 4.0 // Default value from frontend
 	if curve.HyperParameter != nil {
-		speed = float64(*curve.HyperParameter)
+		param = float64(*curve.HyperParameter)
 	}
-	factor := 1 - 1/(1+speed*progress)
-	return int(float64(curve.StartIntensity) + 
-		float64(curve.EndIntensity-curve.StartIntensity) * factor)
+
+	if param != 0 {
+		numerator := 1.0 - math.Exp(-progress*param*0.4)
+		denominator := 1.0 - math.Exp(-param*0.4)
+		factor := numerator / denominator
+		return int(float64(curve.StartIntensity) + 
+			float64(curve.EndIntensity-curve.StartIntensity) * factor)
+	}
+	
+	// Fall back to linear if param is 0
+	return calculateLinearIntensity(curve, progress)
 }
 
 func calculateSCurveIntensity(curve IntensityCurve, progress float64) int {
-	x := (progress - 0.5) * 6 // Scale to make transition steeper
-	factor := 1 / (1 + math.Exp(-x))
+	param := 10.0 // Default value from frontend
+	if curve.HyperParameter != nil {
+		param = float64(*curve.HyperParameter)
+	}
+
+	numerator := math.Exp(param*progress) - 1
+	denominator := (math.Exp(0.5*param) - 1) * (1 + math.Exp(param*(progress-0.5)))
+	factor := numerator / denominator
+
 	return int(float64(curve.StartIntensity) + 
 		float64(curve.EndIntensity-curve.StartIntensity) * factor)
 }
 
 func calculateCustomIntensity(curve IntensityCurve, progress float64) int {
-	if len(curve.ControlPoints) < 2 {
-		return curve.StartIntensity
+	if len(curve.ControlPoints) == 0 {
+		return calculateLinearIntensity(curve, progress)
 	}
 
-	// Find surrounding control points
-	var p1, p2 Point
-	for i, point := range curve.ControlPoints {
-		if point.X/100 > progress {
-			if i == 0 {
-				return curve.StartIntensity
-			}
-			p1 = curve.ControlPoints[i-1]
-			p2 = point
-			break
+	// Create points array with start and end points
+	points := make([]Point, 0, len(curve.ControlPoints)+2)
+	points = append(points, Point{X: 0, Y: float64(curve.StartIntensity)})
+	points = append(points, curve.ControlPoints...)
+	points = append(points, Point{X: 100, Y: float64(curve.EndIntensity)})
+
+	// Find the segment where progress falls
+	progress100 := progress * 100
+	for i := 0; i < len(points)-1; i++ {
+		if progress100 >= points[i].X && progress100 <= points[i+1].X {
+			// Get points for Catmull-Rom calculation
+			p0 := points[max(0, i-1)]
+			p1 := points[i]
+			p2 := points[i+1]
+			p3 := points[min(len(points)-1, i+2)]
+
+			// Calculate t in [0,1] for the current segment
+			t := (progress100 - p1.X) / (p2.X - p1.X)
+
+			// Catmull-Rom calculation
+			t2 := t * t
+			t3 := t2 * t
+
+			y := 0.5 * (
+				(2*p1.Y) +
+				(-p0.Y+p2.Y)*t +
+				(2*p0.Y-5*p1.Y+4*p2.Y-p3.Y)*t2 +
+				(-p0.Y+3*p1.Y-3*p2.Y+p3.Y)*t3)
+
+			return int(y)
 		}
 	}
-	if p2.X == 0 { // We reached the end
-		return curve.EndIntensity
-	}
 
-	// Linear interpolation between control points
-	t := (progress - p1.X/100) / (p2.X/100 - p1.X/100)
-	return int(p1.Y + (p2.Y-p1.Y)*t)
+	return curve.EndIntensity
+}
+
+// Helper functions
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

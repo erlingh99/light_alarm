@@ -27,7 +27,7 @@ status=0
 # Check if the application is running
 if curl -s http://localhost/ > /dev/null; then
     echo -e "${GREEN}✅ Application is running successfully!${NC}"
-    echo -e "${GREEN}🌐 Access the application at: http://alarm.lan/${NC}"
+    echo -e "${GREEN}🌐 Access the application at: http://alarm.lan/${NC}" #this is only true if you have setup a dns record on your router like I have
 else
     echo -e "${RED}❌ Application failed to start${NC}"
     status=1

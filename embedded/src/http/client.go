@@ -3,20 +3,33 @@ package http
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"time"
 
 	"alarm_project/embedded/src/alarm"
 	"alarm_project/embedded/src/config"
 	"alarm_project/embedded/src/log"
+
+	"tinygo.org/x/drivers/net"
+	"tinygo.org/x/tinywifi"
 )
 
-// FetchAlarms retrieves the list of alarms from the server
+var (
+	wifiAdapter = &tinywifi.Adaptor{}
+)
+
 func FetchAlarms() ([]alarm.Alarm, error) {
 	log.Debug("Fetching alarms from %s", config.API_URL)
 
-	// Create HTTP client with timeout
+	// Create a new HTTP client with timeout
 	client := &http.Client{
 		Timeout: config.HTTP_TIMEOUT,
+		Transport: &http.Transport{
+			Dial: func(network, addr string) (net.Conn, error) {
+				return wifiAdapter.Dial(network, addr)
+			},
+		},
 	}
 
 	// Create request
@@ -26,7 +39,6 @@ func FetchAlarms() ([]alarm.Alarm, error) {
 		return nil, err
 	}
 
-	// Add headers
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -38,16 +50,22 @@ func FetchAlarms() ([]alarm.Alarm, error) {
 	}
 	defer resp.Body.Close()
 
-	// Check status code
 	if resp.StatusCode != http.StatusOK {
 		err := fmt.Errorf("server returned status: %d", resp.StatusCode)
 		log.Error("HTTP request failed: %v", err)
 		return nil, err
 	}
 
-	// Decode response
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Error("Failed to read response body: %v", err)
+		return nil, err
+	}
+
+	// Parse JSON response
 	var alarms []alarm.Alarm
-	if err := json.NewDecoder(resp.Body).Decode(&alarms); err != nil {
+	if err := json.Unmarshal(body, &alarms); err != nil {
 		log.Error("Failed to decode response: %v", err)
 		return nil, err
 	}

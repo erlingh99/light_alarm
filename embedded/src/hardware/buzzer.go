@@ -2,14 +2,14 @@ package hardware
 
 import (
 	"alarm_project/embedded/src/config"
+	"alarm_project/embedded/src/log"
 	"machine"
 	"time"
 	"context"
 )
 
-// Note frequencies in Hz
 const (
-	NOTE_C5  = 523
+	NOTE_C5  = 523 //Hz
 	NOTE_D5  = 587
 	NOTE_E5  = 659
 	NOTE_F5  = 698
@@ -28,60 +28,64 @@ type Note struct {
 type Buzzer struct {
 	pin       machine.Pin
 	pwm       machine.PWM
-	intensity uint8
+	pwmCh     uint8    
 }
 
-// NewBuzzer creates and initializes a new Buzzer instance
 func NewBuzzer() *Buzzer {
 	buzzer := &Buzzer{
 		pin: config.BUZZER_PIN,
+		pwm: machine.PWM0,
 	}
-	buzzer.init()
+
+	err := buzzer.pwm.Configure(machine.PWMConfig{
+		Period: 1e6, // 1MHz frequency
+	})
+	if err != nil {
+		log.Error("Failed to configure PWM for buzzer: %v", err)
+		panic(err)
+	}
+
+	ch, err := buzzer.pwm.Channel(buzzer.pin)
+	if err != nil {
+		log.Error("Failed to configure PWM channel for buzzer: %v", err)
+		panic(err)
+	}
+	buzzer.pwmCh = ch
 	return buzzer
 }
 
-// init initializes the buzzer with PWM control
-func (b *Buzzer) init() {
-	b.pin.Configure(machine.PinConfig{Mode: machine.PinOutput})
-}
-
-// setFrequency sets the buzzer frequency in Hz
 func (b *Buzzer) setFrequency(freq int) {
 	if freq == 0 {
 		b.pin.Low()
 		return
 	}
 	
-	pwm := machine.PWM{b.pin}
-	pwm.Configure(machine.PWMConfig{
+	b.pwm.Configure(machine.PWMConfig{
 		Period: uint64(1e9 / freq), // Convert frequency to period in nanoseconds
 	})
-	pwm.Set(32767) // 50% duty cycle for square wave
-	b.pwm = pwm
+	ch, err := b.pwm.Channel(b.pin)
+	if err != nil {
+		log.Error("Failed to configure PWM channel for buzzer: %v", err)
+		panic(err)
+	}
+	b.pwmCh = ch
+	b.pwm.Set(b.pwmCh, b.pwm.Top()/2) // 50% duty cycle for square wave
 }
 
 // SetIntensity sets the buzzer intensity using PWM
 // intensity: 0-100 where 0 is off and 100 is full intensity
-func (b *Buzzer) SetIntensity(intensity int) {
-	// Ensure intensity is within bounds
-	if intensity < 0 {
-		intensity = 0
-	} else if intensity > 100 {
-		intensity = 100
-	}
+// func (b *Buzzer) SetIntensity(intensity int) {
+// 	if intensity < 0 {
+// 		intensity = 0
+// 	} else if intensity > 100 {
+// 		intensity = 100
+// 	}
 	
-	// Convert 0-100 range to 0-65535 for PWM
-	pwmValue := uint16((float64(intensity) * 65535.0) / 100.0)
-	b.pwm.Set(pwmValue)
-	b.intensity = uint8(intensity)
-}
+// 	// Convert 0-100 range to 0-Top for PWM
+// 	pwmValue := uint16((float64(intensity) * b.pwm.Top()) / 100.0)
+// 	b.pwm.Set(b.pwmCh, pwmValue)
+// }
 
-// GetIntensity returns the current buzzer intensity (0-100)
-func (b *Buzzer) GetIntensity() uint8 {
-	return b.intensity
-}
-
-// PlayWakeUpTune plays a predefined wake-up melody
 func (b *Buzzer) PlayWakeUpTune(ctx context.Context) {
 	melody := []Note{
 		{NOTE_C5, 200 * time.Millisecond},
@@ -96,22 +100,16 @@ func (b *Buzzer) PlayWakeUpTune(ctx context.Context) {
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
-			b.setFrequency(0)
-			return
-		default:
-			for _, note := range melody {
-				select {
-				case <-ctx.Done():
-					b.setFrequency(0)
-					return
-				default:
-					b.setFrequency(note.Frequency)
-					time.Sleep(note.Duration)
-				}
+		for _, note := range melody {
+			select {
+			case <-ctx.Done():
+				b.setFrequency(0)
+				return
+			default:
+				b.setFrequency(note.Frequency)
+				time.Sleep(note.Duration)
 			}
-			time.Sleep(500 * time.Millisecond) // Pause between repetitions
 		}
+		time.Sleep(500 * time.Millisecond) // Pause between repetitions
 	}
 }
