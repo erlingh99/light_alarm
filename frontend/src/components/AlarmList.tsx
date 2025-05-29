@@ -71,7 +71,7 @@ export const AlarmList: React.FC<AlarmListProps> = ({
               />
               <h3 className="font-medium">{alarm.name}</h3>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap custom_gap text-sm text-muted-foreground" >
               <span>{formatTime(alarm.time)}</span>
               -
               <span>{formatRecurrence(alarm)}</span>
