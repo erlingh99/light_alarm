@@ -1,6 +1,6 @@
 # Raspberry Pi Pico W Alarm Controller
 
-This is the embedded component of the alarm project, running on a Raspberry Pi Pico W microcontroller. It fetches alarms from the server and controls an LED and buzzer based on the alarm settings. This is a micropython project. The data is fetched from an API endpoint found in the config. The structure of the data is found in /backend/app/models/alarm.py
+This is the embedded component of the alarm project, running on a Raspberry Pi Pico W microcontroller. It fetches alarms from the server and controls an LED and buzzer based on the alarm settings. This is a rust project. The data is fetched from an API endpoint found in the config. The structure of the data is found in /backend/app/models/alarm.py
 
 ## Hardware Requirements
 
