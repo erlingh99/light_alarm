@@ -1,191 +1,155 @@
-//! This example uses the RP Pico W board Wifi chip (cyw43).
-//! Connects to Wifi network and makes a web request to get the current time.
-
 #![no_std]
 #![no_main]
-#![allow(async_fn_in_trait)]
 
-use core::str::from_utf8;
+mod alarm;
+mod net;
+mod time_lib;
 
-use cyw43::JoinOptions;
-use cyw43_pio::{PioSpi, DEFAULT_CLOCK_DIVIDER};
 use defmt::*;
 use embassy_executor::Spawner;
-use embassy_net::dns::DnsSocket;
-use embassy_net::tcp::client::{TcpClient, TcpClientState};
-use embassy_net::{Config, StackResources};
-use embassy_rp::bind_interrupts;
+use embassy_futures::select::{select, Either};
 use embassy_rp::clocks::RoscRng;
-use embassy_rp::gpio::{Level, Output};
-use embassy_rp::peripherals::{DMA_CH0, PIO0};
-use embassy_rp::pio::{InterruptHandler, Pio};
+use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
+use embassy_sync::channel::Channel;
 use embassy_time::{Duration, Timer};
-use reqwless::client::HttpClient;
-use reqwless::request::Method;
-use serde::Deserialize;
 use static_cell::StaticCell;
-use {defmt_rtt as _, panic_probe as _, serde_json_core};
-
-mod config {
-    pub mod wifi_config;
-}
-
-use config::wifi_config::{SSID as WIFI_SSID, PASSWORD as WIFI_PASSWORD};
+use heapless::Vec;
+use time::UtcDateTime;
 
 
+use crate::time_lib::time::TimeManager;
 
-bind_interrupts!(struct Irqs {
-    PIO0_IRQ_0 => InterruptHandler<PIO0>;
-});
+use {defmt_rtt as _, panic_probe as _};
 
-#[embassy_executor::task]
-async fn cyw43_task(runner: cyw43::Runner<'static, Output<'static>, PioSpi<'static, PIO0, 0, DMA_CH0>>) -> ! {
-    runner.run().await
-}
+use alarm::model::Alarm;
+use net::{config::API_POLLING_INTERVAL_S, net::NetworkManager};
+use time_lib::time::time_syncer;
 
-#[embassy_executor::task]
-async fn net_task(mut runner: embassy_net::Runner<'static, cyw43::NetDriver<'static>>) -> ! {
-    runner.run().await
-}
+// Communication channels
+static ALARM_CHANNEL: Channel<CriticalSectionRawMutex, Alarm, 4> = Channel::new();
+static FETCH_REQUEST_CHANNEL: Channel<CriticalSectionRawMutex, (), 2> = Channel::new();
+static NETWORK_MANAGER: StaticCell<NetworkManager<'static>> = StaticCell::new(); // need this as the reference is used from multiple places
+static TIME_MANAGER: StaticCell<TimeManager<'static>> = StaticCell::new(); // need this as the reference is used from multiple places
+
 
 #[embassy_executor::main]
 async fn main(spawner: Spawner) {
-    info!("Hello World!");
+    info!("Starting Pico W Alarm Clock");
 
     let p = embassy_rp::init(Default::default());
     let mut rng = RoscRng;
-
-    let fw = include_bytes!("./cyw43-firmware/43439A0.bin");
-    let clm = include_bytes!("./cyw43-firmware/43439A0_clm.bin");
-    // To make flashing faster for development, you may want to flash the firmwares independently
-    // at hardcoded addresses, instead of baking them into the program with `include_bytes!`:
-    //     probe-rs download 43439A0.bin --binary-format bin --chip RP2040 --base-address 0x10100000
-    //     probe-rs download 43439A0_clm.bin --binary-format bin --chip RP2040 --base-address 0x10140000
-    // let fw = unsafe { core::slice::from_raw_parts(0x10100000 as *const u8, 230321) };
-    // let clm = unsafe { core::slice::from_raw_parts(0x10140000 as *const u8, 4752) };
-
-    let pwr = Output::new(p.PIN_23, Level::Low);
-    let cs = Output::new(p.PIN_25, Level::High);
-    let mut pio = Pio::new(p.PIO0, Irqs);
-    let spi = PioSpi::new(
-        &mut pio.common,
-        pio.sm0,
-        DEFAULT_CLOCK_DIVIDER,
-        pio.irq0,
-        cs,
-        p.PIN_24,
-        p.PIN_29,
-        p.DMA_CH0,
-    );
-
-    static STATE: StaticCell<cyw43::State> = StaticCell::new();
-    let state = STATE.init(cyw43::State::new());
-    let (net_device, mut control, runner) = cyw43::new(state, pwr, spi, fw).await;
-    unwrap!(spawner.spawn(cyw43_task(runner)));
-
-    control.init(clm).await;
-    control
-        .set_power_management(cyw43::PowerManagementMode::PowerSave)
-        .await;
-
-    let config = Config::dhcpv4(Default::default());
-
-    // Generate random seed
     let seed = rng.next_u64();
 
-    // Init network stack
-    static RESOURCES: StaticCell<StackResources<5>> = StaticCell::new();
-    let (stack, runner) = embassy_net::new(net_device, config, RESOURCES.init(StackResources::new()), seed);
+    // Initialize networking
+    NetworkManager::initialize(
+        p.PIO0, p.PIN_23, p.PIN_25, p.PIN_24, p.PIN_29, p.DMA_CH0, &spawner, seed,
+    )
+    .await;
 
-    unwrap!(spawner.spawn(net_task(runner)));
+    info!("Network initialized, connecting to WiFi...");
+    let network_manager = NetworkManager::new().await;
+    let network_manager_ref = NETWORK_MANAGER.init(network_manager);
+    let time_manager = TimeManager::new(network_manager_ref);
+    let time_manager_ref = TIME_MANAGER.init(time_manager);
+
+    spawner.spawn(alarm_fetcher(network_manager_ref)).unwrap();
+    spawner.spawn(time_syncer(time_manager_ref)).unwrap();
+    info!("All tasks started, entering main loop");
+
+    // Main alarm clock logic
+    let mut current_alarms: Vec<Alarm, 8> = Vec::new();
+    let mut last_minute = 255u8; // Invalid minute to force initial check
 
     loop {
-        match control
-            .join(WIFI_SSID, JoinOptions::new(WIFI_PASSWORD.as_bytes()))
-            .await
+        // Check for new alarm data from network task
+        if let Ok(new_alarm) = ALARM_CHANNEL.try_receive() { //will eventually be blocking and another task will trigger alarms
+            info!("Received new alarm: {:?}", new_alarm);
+
+            // Update or add alarm to current list
+            if let Some(existing) = current_alarms.iter_mut().find(|a| a.id == new_alarm.id) {
+                *existing = new_alarm;
+                info!("Updated existing alarm {}", existing.id);
+            } else if current_alarms.push(new_alarm.clone()).is_ok() {
+                info!("Added new alarm {}", new_alarm.id);
+            } else {
+                warn!("Alarm list full, couldn't add alarm {}", new_alarm.id);
+            }
+            //should add logic to only keep the most recent alarms
+        }
+
+        // Check current time and trigger alarms
+        let now = embassy_time::Instant::now();
+        let current_minute = (now.as_secs() / 60) % (24 * 60); // Minutes since midnight
+        let hour = (current_minute / 60) as u8;
+        let minute = (current_minute % 60) as u8;
+
+        // Only check alarms when minute changes
+        if minute != last_minute {
+            last_minute = minute;
+            info!("Current time: {:02}:{:02}", hour, minute);
+
+            // Check if any alarms should trigger
+            for alarm in &current_alarms {
+                let now = match TimeManager::get_current_time().await {
+                    Ok(time) => time,
+                    Err(e) => {
+                        error!("Failed to get current time: {:?}", e);
+                        break; // Skip this iteration if time fetch fails
+                    }
+                };
+
+                // Get current time from time manager
+                if alarm.is_active && is_now(alarm, now) {
+                    info!(
+                        "🚨 ALARM TRIGGERED: {} at {:02}:{:02}",
+                        alarm.name, hour, minute
+                    );
+                    trigger_alarm(&alarm);
+                }
+            }
+        }
+
+        // Sleep for a short time
+        Timer::after(Duration::from_secs(1)).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn alarm_fetcher(network_manager: &'static NetworkManager<'static>) -> ! {
+    loop {
+        match select(
+            Timer::after(Duration::from_secs(API_POLLING_INTERVAL_S)),
+            FETCH_REQUEST_CHANNEL.receive(), // TODO add button to trigger this
+        )
+        .await
         {
-            Ok(_) => break,
-            Err(err) => {
-                info!("join failed with status={}", err.status);
+            Either::First(_) => {
+                info!("Performing periodic alarm fetch");
+                if let Err(e) = network_manager.get_alarms(&ALARM_CHANNEL).await {
+                    error!("Failed to fetch alarms: {:?}", e);
+                }
+            }
+            Either::Second(_) => {
+                info!("Manual alarm fetch requested");
+                if let Err(e) = network_manager.get_alarms(&ALARM_CHANNEL).await {
+                    error!("Failed to fetch alarms on request: {:?}", e);
+                }
             }
         }
     }
+}
 
-    // Wait for DHCP
-    info!("waiting for DHCP...");
-    while !stack.is_config_up() {
-        Timer::after_millis(100).await;
-    }
-    info!("DHCP is now up!");
+fn is_now(_alarm: &Alarm, _now: UtcDateTime) -> bool {
+    false
+}
 
-    info!("waiting for link up...");
-    while !stack.is_link_up() {
-        Timer::after_millis(500).await;
-    }
-    info!("Link is up!");
 
-    info!("waiting for stack to be up...");
-    stack.wait_config_up().await;
-    info!("Stack is up!");
-
-    // And now we can use it!
-
-    loop {
-        let mut rx_buffer = [0; 8192];
-
-        let client_state = TcpClientState::<1, 1024, 1024>::new();
-        let tcp_client = TcpClient::new(stack, &client_state);
-        let dns_client = DnsSocket::new(stack);
-
-        let mut http_client = HttpClient::new(&tcp_client, &dns_client);
-        let url = "http://worldtimeapi.org/api/timezone/Europe/Berlin";
-
-        info!("connecting to {}", &url);
-
-        let mut request = match http_client.request(Method::GET, &url).await {
-            Ok(req) => req,
-            Err(e) => {
-                error!("Failed to make HTTP request: {:?}", e);
-                return; // handle the error
-            }
-        };
-
-        let response = match request.send(&mut rx_buffer).await {
-            Ok(resp) => resp,
-            Err(_e) => {
-                error!("Failed to send HTTP request");
-                return; // handle the error;
-            }
-        };
-
-        let body = match from_utf8(response.body().read_to_end().await.unwrap()) {
-            Ok(b) => b,
-            Err(_e) => {
-                error!("Failed to read response body");
-                return; // handle the error
-            }
-        };
-        info!("Response body: {:?}", &body);
-
-        // parse the response body and update the RTC
-
-        #[derive(Deserialize)]
-        struct ApiResponse<'a> {
-            datetime: &'a str,
-            // other fields as needed
-        }
-
-        let bytes = body.as_bytes();
-        match serde_json_core::de::from_slice::<ApiResponse>(bytes) {
-            Ok((output, _used)) => {
-                info!("Datetime: {:?}", output.datetime);
-            }
-            Err(_e) => {
-                error!("Failed to parse response body");
-                return; // handle the error
-            }
-        }
-
-        Timer::after(Duration::from_secs(5)).await;
-    }
+fn trigger_alarm(alarm: &Alarm) {
+    info!("Triggering alarm: {}", alarm.name);
+    // Here you would:
+    // - Turn on LEDs
+    // - Play sound/buzzer
+    // - Send notifications
+    // - Update display
+    // etc.
 }
