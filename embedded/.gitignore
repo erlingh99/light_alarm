@@ -1,17 +1,6 @@
-# Binaries
-*.bin
-*.uf2
-
-# TinyGo
-*.a
-*.syso
-
 # WiFi credentials
-src/config/wifi_config.go
+src/config/wifi_config.rs
 
-# IDE
-.vscode/
-.idea/
 
 # Build files
-build/
+target/
