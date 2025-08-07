@@ -1,2 +1,4 @@
 pub mod config;
-pub mod net;
+
+mod net_logic;
+pub use net_logic::{NetworkManager, NetworkPinning}; //NetworkError};
