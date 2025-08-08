@@ -6,7 +6,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./backend/alarms.json:/app/alarms.json
+      - ./backend/alarms.json:/app/backend/alarms.json
     environment:
       - BACKEND_HOST=0.0.0.0
       - BACKEND_PORT=80

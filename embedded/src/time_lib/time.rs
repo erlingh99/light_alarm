@@ -27,16 +27,17 @@ impl TimeManager<'static> {
     }
 
     /// Synchronize time with time server
-    pub async fn sync_time(&self) -> Result<UtcDateTime, TimeError> {
+    async fn sync_time(&self) -> Result<UtcDateTime, TimeError> {
         let time_data = self
             .network_manager
             .get_time()
             .await
             .map_err(|_| TimeError::NetworkError)?;
-        log::info!("TIME GOTTEN");
 
-        let utc_time = UtcDateTime::from_unix_timestamp(time_data.timestamp as i64)
-            .map_err(|_| TimeError::InvalidResponse)?;
+        let utc_time = UtcDateTime::from_unix_timestamp(
+            time_data.timestamp as i64 + time_data.utc_offset as i64,
+        )
+        .map_err(|_| TimeError::InvalidResponse)?;
 
         let mut guard = TIME_SYNC_OFFSET.lock().await;
         *guard = Some(utc_time.unix_timestamp() - Instant::now().as_secs() as i64);
@@ -66,11 +67,12 @@ pub async fn time_syncer(time_manager: &'static TimeManager<'static>) -> ! {
         match time_manager.sync_time().await {
             Ok(_) => {
                 log::info!("Time resync successful");
+                Timer::after_secs(TIME_SYNC_INTERVAL_S).await; // 1 hour
             }
             Err(e) => {
-                log::error!("Time resync failed: {e:?}"); //clippy ignore
+                log::error!("Time resync failed: {e:?}");
+                Timer::after_secs(60).await;
             }
         }
-        Timer::after_secs(TIME_SYNC_INTERVAL_S).await; // 1 hour
     }
 }

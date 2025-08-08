@@ -4,7 +4,6 @@ File-based storage for alarms
 
 import json
 import os
-from pathlib import Path
 from typing import Dict
 from uuid import UUID
 

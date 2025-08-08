@@ -9,7 +9,7 @@ use embassy_rp::pio::{InterruptHandler, Pio};
 use embassy_rp::{bind_interrupts, Peri};
 // use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 // use embassy_sync::channel::Channel;
-use embassy_time::Timer;
+use embassy_time::{Duration, Timer};
 // use heapless::Vec;
 use reqwless::client::HttpClient;
 use reqwless::request::Method;
@@ -25,8 +25,6 @@ use crate::time_lib::model::ApiTimeType;
 bind_interrupts!(struct Irqs {
     PIO0_IRQ_0 => InterruptHandler<PIO0>;
 });
-
-static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
 
 #[derive(Debug)]
 pub enum NetworkError {
@@ -87,6 +85,7 @@ impl NetworkManager<'static> {
             .await;
         // Configure network stack
         let config = Config::dhcpv4(Default::default());
+        static RESOURCES: StaticCell<StackResources<3>> = StaticCell::new();
         let resources = RESOURCES.init(StackResources::<3>::new());
         let (stack, runner) = embassy_net::new(net_device, config, resources, seed);
 
@@ -125,20 +124,17 @@ impl NetworkManager<'static> {
         method: Method,
         url: &str,
     ) -> Result<heapless::String<4096>, NetworkError> {
-        log::info!("Maker http");
+        log::info!("Making HTTP request to {url}");
         let client_state = TcpClientState::<1, 1024, 4096>::new();
-        let tcp_client = TcpClient::new(self.stack, &client_state);
+        let mut tcp_client = TcpClient::new(self.stack, &client_state);
+        tcp_client.set_timeout(Some(Duration::from_secs(20)));
         let dns_client = DnsSocket::new(self.stack);
 
-        log::info!("Maker http client");
         let mut http_client = HttpClient::new(&tcp_client, &dns_client);
-        log::info!("making request");
         let mut request = http_client
             .request(method, url)
             .await
             .map_err(|_| NetworkError::RequestFailed)?;
-
-        log::info!("Sending request");
 
         let mut rx_buffer = [0_u8; 4096];
         let response = request
@@ -190,15 +186,12 @@ impl NetworkManager<'static> {
     // }
 
     pub async fn get_time(&self) -> Result<ApiTimeType, NetworkError> {
-        log::info!("Fetching current time from time server...");
         let body = self.make_http_request(Method::GET, TIME_SERVER).await?;
-
-        log::info!("Alarm API response: {:?}", &body);
 
         // Parse JSON array of alarms
         let time = match serde_json_core::de::from_str::<ApiTimeType>(body.as_str()) {
             Ok((time, used)) => {
-                log::info!("used {used} of the api buffer");
+                log::debug!("used {used} of the api buffer");
                 time
             }
             Err(_e) => {
@@ -207,7 +200,6 @@ impl NetworkManager<'static> {
             }
         };
 
-        log::info!("Current time fetched successfully");
         Ok(time)
     }
 }
@@ -230,7 +222,7 @@ async fn wifi_connect_task(mut control: cyw43::Control<'static>) -> ! {
                 }
             }
             Err(err) => {
-                log::error!("WiFi connection failed: {}", err.status);
+                log::error!("WiFi connection failed. Status: {}", err.status);
                 Timer::after_secs(RETRY_DELAY_S).await;
                 log::info!("Retrying WiFi connection...");
             }

@@ -10,22 +10,15 @@ WORKDIR /app
 #    && rm -rf /var/lib/apt/lists/*
 
 # Copy project files
-COPY ./backend/pyproject.toml ./backend/requirements.txt ./
-COPY ./backend/app ./app
+COPY ./backend ./backend
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir fastapi[standard]
+RUN pip install --no-cache-dir -r ./backend/requirements.txt
+# RUN pip install --no-cache-dir fastapi[standard]
 
 # Copy frontend build
-COPY ./frontend/dist /app/frontend/dist
-
-# Expose port
-EXPOSE 80
-
-# Set environment variables
-ENV BACKEND_HOST=0.0.0.0
-ENV BACKEND_PORT=80
+COPY ./frontend/dist ./frontend/dist
 
 # Run the application
-CMD ["fastapi", "run", "app/main.py", "--host", "0.0.0.0", "--port", "80"] 
+WORKDIR /app/backend
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"] 

@@ -74,7 +74,6 @@ async fn main(spawner: Spawner) {
     logging::initialize_logger(spawner, p.USB).await;
 
     log::info!("Starting Pico W Alarm Clock");
-    Timer::after_secs(2).await;
 
     let mut rng = RoscRng;
     let seed = rng.next_u64();
@@ -89,16 +88,14 @@ async fn main(spawner: Spawner) {
     };
     // Initialize networking
     let net_manager = NetworkManager::new(net_pinning, &spawner, seed).await;
-
     let network_manager_ref = NETWORK_MANAGER.init(net_manager);
-    let time_manager = TimeManager::new(network_manager_ref);
 
+    let time_manager = TimeManager::new(network_manager_ref);
     let time_manager_ref = TIME_MANAGER.init(time_manager);
 
     // spawner.spawn(alarm_fetcher(network_manager_ref)).unwrap();
     spawner.spawn(time_syncer(time_manager_ref)).unwrap();
     loop {
-        log::error!("Still alive");
         Timer::after_secs(10).await;
         let t = TimeManager::get_current_time().await;
         log::info!("Current time: {t:?}");
